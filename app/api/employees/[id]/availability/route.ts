@@ -4,17 +4,18 @@ import { prisma } from '@/lib/db/prisma'
 
 export async function POST(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = await requireAuth()
     const body = await req.json()
     const { availability } = body
+    const { id } = await params
 
     // Verify employee belongs to organization
     const employee = await prisma.employee.findFirst({
       where: {
-        id: params.id,
+        id,
         organizationId: user.organizationId,
       },
     })
@@ -25,7 +26,7 @@ export async function POST(
 
     // Update availability template
     await prisma.employee.update({
-      where: { id: params.id },
+      where: { id },
       data: {
         availabilityTemplate: availability,
       },

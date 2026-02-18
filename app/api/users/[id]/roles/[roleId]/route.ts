@@ -5,10 +5,11 @@ import { PERMISSIONS } from '@/lib/permissions/permissions'
 
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string; roleId: string } }
+  { params }: { params: Promise<{ id: string; roleId: string }> }
 ) {
   try {
     const user = await requireAuth()
+    const { id, roleId } = await params
 
     // Check permission to manage roles
     const canManage = await PermissionService.hasPermission(
@@ -21,7 +22,7 @@ export async function DELETE(
       return NextResponse.json({ message: 'Insufficient permissions' }, { status: 403 })
     }
 
-    await PermissionService.removeRoleFromUser(params.id, params.roleId, user.organizationId)
+    await PermissionService.removeRoleFromUser(id, roleId, user.organizationId)
 
     return NextResponse.json({ message: 'Role removed' }, { status: 200 })
   } catch (error) {

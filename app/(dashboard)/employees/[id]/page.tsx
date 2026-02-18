@@ -4,12 +4,13 @@ import { prisma } from '@/lib/db/prisma'
 import { notFound } from 'next/navigation'
 import { EmployeeProfile } from '@/components/employees/employee-profile'
 
-export default async function EmployeeDetailPage({ params }: { params: { id: string } }) {
+export default async function EmployeeDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const user = await requireAuth()
+  const { id } = await params
 
   const employee = await prisma.employee.findFirst({
     where: {
-      id: params.id,
+      id,
       organizationId: user.organizationId,
     },
     include: {
@@ -25,6 +26,12 @@ export default async function EmployeeDetailPage({ params }: { params: { id: str
     notFound()
   }
 
+  // Convert Decimal to number for the component
+  const employeeForComponent = {
+    ...employee,
+    hourlyRate: employee.hourlyRate ? Number(employee.hourlyRate) : null,
+  }
+
   return (
     <div className="space-y-6">
       <div>
@@ -32,7 +39,7 @@ export default async function EmployeeDetailPage({ params }: { params: { id: str
         <p className="text-muted-foreground">{employee.user.email}</p>
       </div>
 
-      <EmployeeProfile employee={employee} />
+      <EmployeeProfile employee={employeeForComponent} />
     </div>
   )
 }

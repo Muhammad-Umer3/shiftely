@@ -7,6 +7,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 enum SubscriptionTier {
@@ -95,8 +96,8 @@ model User {
   notifications  Notification[]
   swapRequests   ShiftSwap[]   @relation("SwapRequester")
   swapTargets   ShiftSwap[]    @relation("SwapTarget")
-  userRoles      UserRole[]
-  assignedRoles  UserRole[]    @relation("RoleAssigner")
+  userRoles      UserRoleAssignment[]
+  assignedRoles  UserRoleAssignment[]    @relation("RoleAssigner")
   verificationTokens VerificationToken[]
   passwordResetTokens PasswordResetToken[]
   sentInvitations Invitation[] @relation("Inviter")
@@ -203,6 +204,7 @@ model AvailabilityRequest {
 model ShiftSwap {
   id                String     @id @default(cuid())
   shiftId            String
+  organizationId     String
   requesterId        String
   targetEmployeeId   String?
   status             SwapStatus @default(PENDING)
@@ -210,11 +212,13 @@ model ShiftSwap {
   updatedAt          DateTime   @updatedAt
 
   shift              Shift      @relation(fields: [shiftId], references: [id], onDelete: Cascade)
+  organization       Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   requester          User       @relation("SwapRequester", fields: [requesterId], references: [id])
   targetEmployee     User?      @relation("SwapTarget", fields: [targetEmployeeId], references: [id], onDelete: SetNull)
 
   @@index([shiftId])
   @@index([requesterId])
+  @@index([organizationId])
   @@map("shift_swaps")
 }
 
@@ -281,7 +285,7 @@ model Role {
 
   organization    Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   rolePermissions RolePermission[]
-  userRoles       UserRole[]
+  userRoles       UserRoleAssignment[]
 
   @@unique([organizationId, name])
   @@index([organizationId])
@@ -299,7 +303,7 @@ model RolePermission {
   @@map("role_permissions")
 }
 
-model UserRole {
+model UserRoleAssignment {
   id          String   @id @default(cuid())
   userId      String
   roleId      String

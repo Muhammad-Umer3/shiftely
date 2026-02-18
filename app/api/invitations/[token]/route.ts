@@ -4,11 +4,12 @@ import { handleApiError } from '@/lib/middleware/error-handler'
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: { token: string } }
+  { params }: { params: Promise<{ token: string }> }
 ) {
   try {
+    const { token } = await params
     const invitation = await prisma.invitation.findUnique({
-      where: { token: params.token },
+      where: { token },
       include: {
         organization: true,
         invitedBy: {

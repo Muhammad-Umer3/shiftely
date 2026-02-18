@@ -87,7 +87,7 @@ export function getLineItemForTier(tier: keyof typeof SUBSCRIPTION_TIERS) {
         description: tierInfo.features.join(', '),
       },
       recurring: {
-        interval: 'month',
+        interval: 'month' as const,
       },
       unit_amount: tierInfo.price * 100, // Convert to cents
     },

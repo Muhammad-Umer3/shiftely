@@ -150,7 +150,7 @@ async function main() {
       }
 
       // Check if user already has this role
-      const existing = await prisma.userRole.findUnique({
+      const existing = await prisma.userRoleAssignment.findUnique({
         where: {
           userId_roleId: {
             userId: user.id,
@@ -160,7 +160,7 @@ async function main() {
       })
 
       if (!existing) {
-        await prisma.userRole.create({
+        await prisma.userRoleAssignment.create({
           data: {
             userId: user.id,
             roleId: roleToAssign.id,

@@ -71,7 +71,7 @@ export function PermissionSelector({
                 <CardTitle className="capitalize">{resource}</CardTitle>
                 <Checkbox
                   checked={allSelected}
-                  onCheckedChange={() => toggleResource(resource)}
+                  onChange={() => toggleResource(resource)}
                   ref={(el) => {
                     if (el) {
                       el.indeterminate = someSelected && !allSelected
@@ -93,7 +93,7 @@ export function PermissionSelector({
                       <Checkbox
                         id={entry.id}
                         checked={selectedPermissions.includes(entry.id)}
-                        onCheckedChange={() => togglePermission(entry.id)}
+                        onChange={() => togglePermission(entry.id)}
                       />
                       <label
                         htmlFor={entry.id}

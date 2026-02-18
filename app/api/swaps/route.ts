@@ -30,6 +30,7 @@ export async function POST(req: NextRequest) {
     const swap = await prisma.shiftSwap.create({
       data: {
         shiftId,
+        organizationId: user.organizationId,
         requesterId: user.id,
         targetEmployeeId: targetEmployeeId || null,
         status: 'PENDING',

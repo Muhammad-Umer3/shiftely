@@ -5,10 +5,11 @@ import { PERMISSIONS } from '@/lib/permissions/permissions'
 
 export async function POST(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = await requireAuth()
+    const { id } = await params
 
     // Check permission to manage roles
     const canManage = await PermissionService.hasPermission(
@@ -29,7 +30,7 @@ export async function POST(
     }
 
     const userRole = await PermissionService.assignRoleToUser(
-      params.id,
+      id,
       roleId,
       user.id,
       user.organizationId

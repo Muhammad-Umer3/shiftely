@@ -5,12 +5,13 @@ import { PERMISSIONS } from '@/lib/permissions/permissions'
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = await requireAuth()
+    const { id } = await params
 
-    const role = await PermissionService.getRole(params.id, user.organizationId)
+    const role = await PermissionService.getRole(id, user.organizationId)
 
     if (!role) {
       return NextResponse.json({ message: 'Role not found' }, { status: 404 })
@@ -25,10 +26,11 @@ export async function GET(
 
 export async function PUT(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = await requireAuth()
+    const { id } = await params
 
     // Check permission to manage roles
     const canManage = await PermissionService.hasPermission(
@@ -49,7 +51,7 @@ export async function PUT(
     }
 
     const role = await PermissionService.updateRole(
-      params.id,
+      id,
       user.organizationId,
       name,
       description || null,
@@ -68,10 +70,11 @@ export async function PUT(
 
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = await requireAuth()
+    const { id } = await params
 
     // Check permission to manage roles
     const canManage = await PermissionService.hasPermission(
@@ -84,7 +87,7 @@ export async function DELETE(
       return NextResponse.json({ message: 'Insufficient permissions' }, { status: 403 })
     }
 
-    await PermissionService.deleteRole(params.id, user.organizationId)
+    await PermissionService.deleteRole(id, user.organizationId)
 
     return NextResponse.json({ message: 'Role deleted' }, { status: 200 })
   } catch (error) {

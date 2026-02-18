@@ -4,12 +4,13 @@ import { SchedulerService } from '@/server/services/scheduler/scheduler.service'
 
 export async function POST(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = await requireAuth()
+    const { id } = await params
 
-    const schedule = await SchedulerService.publishSchedule(params.id, user.organizationId)
+    const schedule = await SchedulerService.publishSchedule(id, user.organizationId)
 
     return NextResponse.json({ schedule }, { status: 200 })
   } catch (error) {

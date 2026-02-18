@@ -22,12 +22,12 @@ export function sanitizeString(input: string): string {
  * Sanitize object strings recursively
  */
 export function sanitizeObject<T extends Record<string, any>>(obj: T): T {
-  const sanitized = { ...obj }
+  const sanitized = { ...obj } as T
   for (const key in sanitized) {
     if (typeof sanitized[key] === 'string') {
-      sanitized[key] = sanitizeString(sanitized[key])
+      ;(sanitized as any)[key] = sanitizeString(sanitized[key] as string)
     } else if (typeof sanitized[key] === 'object' && sanitized[key] !== null) {
-      sanitized[key] = sanitizeObject(sanitized[key])
+      ;(sanitized as any)[key] = sanitizeObject(sanitized[key])
     }
   }
   return sanitized

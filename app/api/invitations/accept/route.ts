@@ -88,7 +88,7 @@ export async function POST(req: NextRequest) {
         invitation.organizationId
       )
 
-      await tx.userRole.create({
+      await tx.userRoleAssignment.create({
         data: {
           userId: user.id,
           roleId: employeeRole.id,

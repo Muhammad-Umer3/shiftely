@@ -5,14 +5,15 @@ import { NotificationService } from '@/server/services/notifications/notificatio
 
 export async function POST(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = await requireAuth()
+    const { id } = await params
 
     const swap = await prisma.shiftSwap.findFirst({
       where: {
-        id: params.id,
+        id,
         OR: [
           { targetEmployeeId: user.id },
           { requesterId: user.id },
@@ -30,7 +31,7 @@ export async function POST(
 
     // Update swap status
     const updatedSwap = await prisma.shiftSwap.update({
-      where: { id: params.id },
+      where: { id },
       data: { status: 'REJECTED' },
     })
 

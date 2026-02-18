@@ -7,7 +7,7 @@ export class PermissionService {
    * Resolves permissions from all roles assigned to the user
    */
   static async getUserPermissions(userId: string, organizationId: string): Promise<Permission[]> {
-    const userRoles = await prisma.userRole.findMany({
+    const userRoles = await prisma.userRoleAssignment.findMany({
       where: {
         userId,
         role: {
@@ -227,7 +227,7 @@ export class PermissionService {
     }
 
     // Check if role is assigned to any users
-    const userCount = await prisma.userRole.count({
+    const userCount = await prisma.userRoleAssignment.count({
       where: { roleId },
     })
 
@@ -360,7 +360,7 @@ export class PermissionService {
     }
 
     // Check if already assigned
-    const existing = await prisma.userRole.findUnique({
+    const existing = await prisma.userRoleAssignment.findUnique({
       where: {
         userId_roleId: {
           userId,
@@ -373,7 +373,7 @@ export class PermissionService {
       return existing
     }
 
-    return prisma.userRole.create({
+    return prisma.userRoleAssignment.create({
       data: {
         userId,
         roleId,
@@ -423,7 +423,7 @@ export class PermissionService {
       }
     }
 
-    return prisma.userRole.deleteMany({
+    return prisma.userRoleAssignment.deleteMany({
       where: {
         userId,
         roleId,

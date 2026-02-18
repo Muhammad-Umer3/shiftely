@@ -19,12 +19,13 @@
     "@dnd-kit/utilities": "^3.2.2",
     "@google/generative-ai": "^0.21.0",
     "@hookform/resolvers": "^5.2.2",
-    "@prisma/client": "^7.4.0",
+    "@prisma/client": "^6.0.0",
     "@radix-ui/react-accordion": "^1.2.12",
     "@radix-ui/react-dialog": "^1.1.15",
     "@radix-ui/react-progress": "^1.1.8",
     "@radix-ui/react-tooltip": "^1.2.8",
     "@stripe/stripe-js": "^8.7.0",
+    "@tailwindcss/postcss": "^4.1.18",
     "@types/node": "^25.2.3",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
@@ -51,7 +52,7 @@
     "eslint": "^9.39.2",
     "eslint-config-next": "^16.1.6",
     "postcss": "^8.5.6",
-    "prisma": "^7.4.0",
+    "prisma": "^6.0.0",
     "tailwindcss": "^4.1.18",
     "tsx": "^4.21.0"
   }

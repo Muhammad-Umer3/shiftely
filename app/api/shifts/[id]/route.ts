@@ -4,15 +4,16 @@ import { prisma } from '@/lib/db/prisma'
 
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = await requireAuth()
+    const { id } = await params
 
     // Verify shift belongs to organization
     const shift = await prisma.shift.findFirst({
       where: {
-        id: params.id,
+        id,
         organizationId: user.organizationId,
       },
     })
@@ -22,7 +23,7 @@ export async function DELETE(
     }
 
     await prisma.shift.delete({
-      where: { id: params.id },
+      where: { id },
     })
 
     return NextResponse.json({ message: 'Shift deleted' }, { status: 200 })

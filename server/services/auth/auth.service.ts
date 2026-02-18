@@ -60,7 +60,7 @@ export class AuthService {
       )
 
       // Assign admin role to user
-      await tx.userRole.create({
+      await tx.userRoleAssignment.create({
         data: {
           userId: user.id,
           roleId: adminRole.id,

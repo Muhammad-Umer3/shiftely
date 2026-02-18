@@ -49,33 +49,20 @@ export async function POST(req: NextRequest) {
         proration_behavior: 'always_invoice', // Prorate the difference
       }
 
-      // If price ID is available, use it (recommended)
-      if (tierInfo.priceId) {
-        updateData.items = [
-          {
-            id: subscription.items.data[0].id,
-            price: tierInfo.priceId,
-          },
-        ]
-      } else {
-        // Otherwise use price_data
-        updateData.items = [
-          {
-            id: subscription.items.data[0].id,
-            price_data: {
-              currency: 'usd',
-              product_data: {
-                name: `${tierInfo.name} Plan`,
-                description: tierInfo.features.join(', '),
-              },
-              recurring: {
-                interval: 'month',
-              },
-              unit_amount: tierInfo.price * 100,
-            },
-          },
-        ]
+      // Price ID is required for subscription updates
+      if (!tierInfo.priceId) {
+        return NextResponse.json(
+          { message: 'Price ID not configured for this tier. Please configure Stripe price IDs.' },
+          { status: 400 }
+        )
       }
+
+      updateData.items = [
+        {
+          id: subscription.items.data[0].id,
+          price: tierInfo.priceId,
+        },
+      ]
 
       await stripe.subscriptions.update(organization.stripeSubscriptionId, updateData)
 
