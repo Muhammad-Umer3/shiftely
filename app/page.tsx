@@ -8,7 +8,7 @@ import { CTASection } from '@/components/landing/cta-section'
 
 export default function Home() {
   return (
-    <div className="overflow-x-hidden">
+    <div className="overflow-x-hidden bg-stone-950 min-h-screen">
       <Navbar />
       <main>
         <HeroSection />

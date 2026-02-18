@@ -1,105 +1,151 @@
+'use client'
+
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Check, Sparkles } from 'lucide-react'
 import Link from 'next/link'
-import { SUBSCRIPTION_TIERS } from '@/lib/stripe'
+import { SUBSCRIPTION_TIERS } from '@/lib/subscription-tiers'
+import { useEffect, useRef, useState } from 'react'
 
 export function PricingSection() {
+  const [isVisible, setIsVisible] = useState(false)
+  const sectionRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsVisible(true)
+        }
+      },
+      { threshold: 0.1 }
+    )
+
+    if (sectionRef.current) {
+      observer.observe(sectionRef.current)
+    }
+
+    return () => observer.disconnect()
+  }, [])
+
   return (
-    <section id="pricing" className="py-20 bg-gradient-to-b from-gray-50 to-white">
-      <div className="container mx-auto px-4">
-        <div className="mx-auto max-w-2xl text-center mb-16">
-          <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
-            Simple, transparent pricing
+    <section id="pricing" className="py-24 bg-stone-950 relative overflow-hidden" ref={sectionRef}>
+      {/* Background */}
+      <div className="absolute inset-0 grid-pattern opacity-50" />
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-amber-500/5 rounded-full blur-3xl" />
+
+      <div className="container mx-auto px-6 relative z-10">
+        <div className="mx-auto max-w-3xl text-center mb-20">
+          <span className="inline-block text-amber-400 text-sm font-semibold tracking-wider uppercase mb-4">
+            Pricing
+          </span>
+          <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
+            Simple, transparent
+            <span className="block gradient-text">pricing for everyone</span>
           </h2>
-          <p className="mt-4 text-lg text-gray-600">
-            Start free, upgrade when you're ready. No credit card required.
+          <p className="text-lg text-stone-400">
+            Start free, upgrade when you&apos;re ready. No credit card required.
           </p>
         </div>
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 max-w-6xl mx-auto">
-          {Object.entries(SUBSCRIPTION_TIERS).map(([key, tier]) => {
+
+        <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3 max-w-6xl mx-auto">
+          {Object.entries(SUBSCRIPTION_TIERS).map(([key, tier], index) => {
             const isPopular = key === 'GROWTH'
             const isFree = key === 'FREE'
             
             return (
-              <Card 
-                key={key} 
-                className={`relative transition-all hover:shadow-xl ${
-                  isPopular 
-                    ? 'border-2 border-blue-500 shadow-lg scale-105 md:scale-110' 
-                    : 'border'
-                }`}
+              <div
+                key={key}
+                className={`relative rounded-3xl transition-all duration-700 ${
+                  isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
+                } ${isPopular ? 'lg:scale-105 lg:-translate-y-4' : ''}`}
+                style={{ transitionDelay: `${index * 150}ms` }}
               >
-                {isPopular && (
-                  <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-                    <span className="bg-gradient-to-r from-blue-600 to-purple-600 text-white text-xs font-semibold px-4 py-1 rounded-full flex items-center gap-1">
-                      <Sparkles className="h-3 w-3" />
-                      Most Popular
-                    </span>
-                  </div>
-                )}
-                
-                <CardHeader className={isPopular ? 'pt-8' : ''}>
-                  <CardTitle className="text-2xl">{tier.name}</CardTitle>
-                  <div className="mt-4">
-                    <span className="text-5xl font-bold">${tier.price}</span>
-                    {!isFree && <span className="text-muted-foreground text-lg">/month</span>}
-                  </div>
-                  <CardDescription className="mt-2 text-base">
-                    {isFree 
-                      ? 'Perfect for getting started' 
-                      : `Up to ${tier.employeeLimit} employees`}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <ul className="space-y-3 mb-8 min-h-[200px]">
-                    {tier.features.map((feature, idx) => (
-                      <li key={idx} className="flex items-start gap-3">
-                        <Check className={`h-5 w-5 mt-0.5 flex-shrink-0 ${
-                          isPopular ? 'text-blue-600' : 'text-green-500'
-                        }`} />
-                        <span className="text-sm leading-relaxed">{feature}</span>
-                      </li>
-                    ))}
-                  </ul>
-                  {isFree ? (
-                    <Link href="/register" className="block">
-                      <Button className="w-full" variant="outline" size="lg">
-                        Get Started Free
-                      </Button>
-                    </Link>
-                  ) : (
-                    <Link href="/register" className="block">
-                      <Button 
-                        className={`w-full ${
-                          isPopular 
-                            ? 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700' 
-                            : ''
-                        }`}
-                        size="lg"
-                        variant={isPopular ? 'default' : 'default'}
-                      >
-                        Start 14-Day Free Trial
-                      </Button>
-                    </Link>
+                {/* Card */}
+                <div className={`h-full p-8 rounded-3xl transition-all duration-300 ${
+                  isPopular 
+                    ? 'bg-gradient-to-b from-amber-500/20 to-amber-600/5 border-2 border-amber-500/50 shadow-2xl shadow-amber-500/10' 
+                    : 'glass-card'
+                }`}>
+                  {isPopular && (
+                    <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
+                      <span className="bg-gradient-to-r from-amber-400 to-amber-600 text-stone-950 text-xs font-bold px-5 py-2 rounded-full flex items-center gap-2 shadow-lg">
+                        <Sparkles className="h-3 w-3" />
+                        Most Popular
+                      </span>
+                    </div>
                   )}
-                  {!isFree && (
-                    <p className="text-xs text-center text-gray-500 mt-3">
-                      No credit card required • Cancel anytime
+                  
+                  <div className={isPopular ? 'pt-4' : ''}>
+                    <h3 className="text-2xl font-bold text-white mb-2">{tier.name}</h3>
+                    <p className="text-stone-400 text-sm mb-6">
+                      {isFree 
+                        ? 'Perfect for getting started' 
+                        : `Up to ${tier.employeeLimit} employees`}
                     </p>
-                  )}
-                </CardContent>
-              </Card>
+                    
+                    <div className="mb-8">
+                      <span className="text-5xl font-bold text-white">${tier.price}</span>
+                      {!isFree && <span className="text-stone-500 text-lg">/month</span>}
+                    </div>
+                    
+                    <ul className="space-y-4 mb-10">
+                      {tier.features.map((feature, idx) => (
+                        <li key={idx} className="flex items-start gap-3">
+                          <div className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 ${
+                            isPopular ? 'bg-amber-500/20' : 'bg-stone-800'
+                          }`}>
+                            <Check className={`h-3 w-3 ${isPopular ? 'text-amber-400' : 'text-emerald-400'}`} />
+                          </div>
+                          <span className="text-stone-300 text-sm leading-relaxed">{feature}</span>
+                        </li>
+                      ))}
+                    </ul>
+                    
+                    {isFree ? (
+                      <Link href="/register" className="block">
+                        <Button 
+                          className="w-full py-6 text-base border-2 border-stone-700 bg-transparent text-white hover:bg-stone-800 hover:border-stone-600 transition-all"
+                          variant="outline"
+                        >
+                          Get Started Free
+                        </Button>
+                      </Link>
+                    ) : (
+                      <Link href="/register" className="block">
+                        <Button 
+                          className={`w-full py-6 text-base font-semibold transition-all ${
+                            isPopular 
+                              ? 'bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-stone-950 shadow-lg shadow-amber-500/25' 
+                              : 'bg-stone-800 hover:bg-stone-700 text-white'
+                          }`}
+                        >
+                          Start 14-Day Free Trial
+                        </Button>
+                      </Link>
+                    )}
+                    
+                    {!isFree && (
+                      <p className="text-xs text-center text-stone-500 mt-4">
+                        No credit card required • Cancel anytime
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
             )
           })}
         </div>
 
         {/* Money-back guarantee */}
-        <div className="mt-12 text-center">
-          <p className="text-sm text-gray-600">
-            <span className="font-semibold">30-day money-back guarantee</span> on all paid plans. 
-            Not satisfied? Get a full refund, no questions asked.
-          </p>
+        <div className="mt-16 text-center">
+          <div className="inline-flex items-center gap-3 px-6 py-3 rounded-full bg-stone-800/50 border border-stone-700">
+            <div className="w-8 h-8 rounded-full bg-emerald-500/20 flex items-center justify-center">
+              <Check className="w-4 h-4 text-emerald-400" />
+            </div>
+            <p className="text-sm text-stone-300">
+              <span className="font-semibold text-white">30-day money-back guarantee</span> on all paid plans
+            </p>
+          </div>
         </div>
       </div>
     </section>

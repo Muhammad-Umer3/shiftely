@@ -2,7 +2,7 @@
 
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { SUBSCRIPTION_TIERS } from '@/lib/stripe'
+import { SUBSCRIPTION_TIERS } from '@/lib/subscription-tiers'
 import { useState } from 'react'
 import { Check } from 'lucide-react'
 import { toast } from 'sonner'

@@ -9,7 +9,7 @@ import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Sparkles, KeyRound } from 'lucide-react'
 import { toast } from 'sonner'
 
 const resetPasswordSchema = z.object({
@@ -82,58 +82,87 @@ function ResetPasswordContent() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader>
-          <CardTitle className="text-2xl">Reset Password</CardTitle>
-          <CardDescription>Enter your new password</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="password">New Password</Label>
-              <Input id="password" type="password" {...register('password')} />
-              {errors.password && (
-                <p className="text-sm text-red-500">{errors.password.message}</p>
-              )}
-              <p className="text-xs text-muted-foreground">
-                Must be at least 8 characters
-              </p>
-            </div>
+    <div className="w-full max-w-md">
+      <div className="glass-card rounded-3xl p-8 md:p-10 border-amber-500/20">
+        <Link href="/" className="flex items-center gap-3 mb-8 group">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center shadow-lg shadow-amber-500/20 group-hover:shadow-amber-500/40 transition-shadow">
+            <Sparkles className="w-5 h-5 text-stone-950" />
+          </div>
+          <span className="text-xl font-bold text-white tracking-tight">Shiftely</span>
+        </Link>
 
-            <div className="space-y-2">
-              <Label htmlFor="confirmPassword">Confirm Password</Label>
-              <Input id="confirmPassword" type="password" {...register('confirmPassword')} />
-              {errors.confirmPassword && (
-                <p className="text-sm text-red-500">{errors.confirmPassword.message}</p>
-              )}
-            </div>
+        <div className="flex justify-center mb-6">
+          <div className="w-16 h-16 rounded-2xl bg-amber-500/20 flex items-center justify-center">
+            <KeyRound className="w-8 h-8 text-amber-400" />
+          </div>
+        </div>
 
-            <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? 'Resetting...' : 'Reset Password'}
-            </Button>
+        <div className="mb-8">
+          <h1 className="text-2xl md:text-3xl font-bold text-white mb-2">
+            Reset password
+          </h1>
+          <p className="text-stone-400">
+            Enter your new password below
+          </p>
+        </div>
 
-            <p className="text-center text-sm text-muted-foreground">
-              <Link href="/login" className="text-primary hover:underline">
-                Back to Login
-              </Link>
-            </p>
-          </form>
-        </CardContent>
-      </Card>
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+          <div className="space-y-2">
+            <Label htmlFor="password" className="text-stone-300">New Password</Label>
+            <Input
+              id="password"
+              type="password"
+              placeholder="••••••••"
+              className="h-12 bg-stone-900/50 border-stone-700 text-white placeholder:text-stone-500 focus-visible:ring-amber-500/50 focus-visible:border-amber-500/50"
+              {...register('password')}
+            />
+            {errors.password && (
+              <p className="text-sm text-red-400">{errors.password.message}</p>
+            )}
+            <p className="text-xs text-stone-500">Must be at least 8 characters</p>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="confirmPassword" className="text-stone-300">Confirm Password</Label>
+            <Input
+              id="confirmPassword"
+              type="password"
+              placeholder="••••••••"
+              className="h-12 bg-stone-900/50 border-stone-700 text-white placeholder:text-stone-500 focus-visible:ring-amber-500/50 focus-visible:border-amber-500/50"
+              {...register('confirmPassword')}
+            />
+            {errors.confirmPassword && (
+              <p className="text-sm text-red-400">{errors.confirmPassword.message}</p>
+            )}
+          </div>
+
+          <Button
+            type="submit"
+            className="w-full h-12 text-base font-semibold bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-stone-950 shadow-lg shadow-amber-500/25 transition-all"
+            disabled={isLoading}
+          >
+            {isLoading ? 'Resetting...' : 'Reset Password'}
+          </Button>
+        </form>
+
+        <p className="mt-8 text-center text-sm text-stone-500">
+          <Link href="/login" className="text-amber-400 hover:text-amber-300 font-medium transition-colors">
+            Back to Login
+          </Link>
+        </p>
+      </div>
     </div>
   )
 }
 
 function ResetPasswordLoading() {
   return (
-    <div className="flex min-h-screen items-center justify-center p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader>
-          <CardTitle className="text-2xl">Reset Password</CardTitle>
-          <CardDescription>Loading...</CardDescription>
-        </CardHeader>
-      </Card>
+    <div className="w-full max-w-md">
+      <div className="glass-card rounded-3xl p-8 md:p-10 border-amber-500/20 animate-pulse">
+        <div className="h-10 w-32 bg-stone-800 rounded-lg mb-8" />
+        <div className="h-8 w-48 bg-stone-800 rounded mb-2" />
+        <div className="h-4 w-32 bg-stone-800 rounded" />
+      </div>
     </div>
   )
 }

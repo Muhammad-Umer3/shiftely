@@ -2,10 +2,10 @@
 
 import { Suspense, useState, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { toast } from 'sonner'
 import Link from 'next/link'
+import { Sparkles, Mail, CheckCircle2, XCircle } from 'lucide-react'
 
 function VerifyEmailContent() {
   const router = useRouter()
@@ -43,8 +43,7 @@ function VerifyEmailContent() {
       setStatus('success')
       setMessage('Email verified successfully!')
       toast.success('Email verified successfully!')
-      
-      // Redirect to login after 2 seconds
+
       setTimeout(() => {
         router.push('/login?verified=true')
       }, 2000)
@@ -75,100 +74,131 @@ function VerifyEmailContent() {
     }
   }
 
+  const AuthCard = ({ children }: { children: React.ReactNode }) => (
+    <div className="w-full max-w-md">
+      <div className="glass-card rounded-3xl p-8 md:p-10 border-amber-500/20">
+        <Link href="/" className="flex items-center gap-3 mb-8 group">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center shadow-lg shadow-amber-500/20 group-hover:shadow-amber-500/40 transition-shadow">
+            <Sparkles className="w-5 h-5 text-stone-950" />
+          </div>
+          <span className="text-xl font-bold text-white tracking-tight">Shiftely</span>
+        </Link>
+        {children}
+      </div>
+    </div>
+  )
+
   if (status === 'loading') {
     return (
-      <div className="flex min-h-screen items-center justify-center p-4">
-        <Card className="w-full max-w-md">
-          <CardContent className="pt-6">
-            <p className="text-center">Verifying your email...</p>
-          </CardContent>
-        </Card>
-      </div>
+      <AuthCard>
+        <div className="flex flex-col items-center py-8">
+          <div className="w-16 h-16 rounded-2xl bg-amber-500/20 flex items-center justify-center mb-6 animate-pulse">
+            <Mail className="w-8 h-8 text-amber-400" />
+          </div>
+          <p className="text-stone-400">Verifying your email...</p>
+        </div>
+      </AuthCard>
     )
   }
 
   if (status === 'success') {
     return (
-      <div className="flex min-h-screen items-center justify-center p-4">
-        <Card className="w-full max-w-md">
-          <CardHeader>
-            <CardTitle className="text-2xl text-green-600">Email Verified!</CardTitle>
-            <CardDescription>{message}</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground mb-4">
-              Your email has been verified. Redirecting to login...
-            </p>
-            <Link href="/login">
-              <Button className="w-full">Go to Login</Button>
-            </Link>
-          </CardContent>
-        </Card>
-      </div>
+      <AuthCard>
+        <div className="flex justify-center mb-6">
+          <div className="w-16 h-16 rounded-2xl bg-emerald-500/20 flex items-center justify-center">
+            <CheckCircle2 className="w-8 h-8 text-emerald-400" />
+          </div>
+        </div>
+        <h1 className="text-2xl md:text-3xl font-bold text-white mb-2 text-center">
+          Email Verified!
+        </h1>
+        <p className="text-stone-400 text-center mb-8">
+          Your email has been verified. Redirecting to login...
+        </p>
+        <Link href="/login">
+          <Button className="w-full h-12 text-base font-semibold bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-stone-950 shadow-lg shadow-amber-500/25 transition-all">
+            Go to Login
+          </Button>
+        </Link>
+      </AuthCard>
     )
   }
 
   if (status === 'error') {
     return (
-      <div className="flex min-h-screen items-center justify-center p-4">
-        <Card className="w-full max-w-md">
-          <CardHeader>
-            <CardTitle className="text-2xl text-red-600">Verification Failed</CardTitle>
-            <CardDescription>{message}</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <p className="text-sm text-muted-foreground">
-              The verification link may have expired or is invalid.
-            </p>
-            <Button onClick={resendVerification} className="w-full">
-              Resend Verification Email
+      <AuthCard>
+        <div className="flex justify-center mb-6">
+          <div className="w-16 h-16 rounded-2xl bg-red-500/20 flex items-center justify-center">
+            <XCircle className="w-8 h-8 text-red-400" />
+          </div>
+        </div>
+        <h1 className="text-2xl md:text-3xl font-bold text-white mb-2 text-center">
+          Verification Failed
+        </h1>
+        <p className="text-stone-400 text-center mb-8">
+          {message} The verification link may have expired or is invalid.
+        </p>
+        <div className="space-y-4">
+          <Button
+            onClick={resendVerification}
+            className="w-full h-12 text-base font-semibold bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-stone-950 shadow-lg shadow-amber-500/25 transition-all"
+          >
+            Resend Verification Email
+          </Button>
+          <Link href="/login" className="block">
+            <Button
+              variant="outline"
+              className="w-full h-12 text-base border-2 border-stone-700 text-stone-300 hover:border-amber-500/50 hover:text-amber-400 hover:bg-amber-500/5 transition-all"
+            >
+              Back to Login
             </Button>
-            <Link href="/login">
-              <Button variant="outline" className="w-full">
-                Back to Login
-              </Button>
-            </Link>
-          </CardContent>
-        </Card>
-      </div>
+          </Link>
+        </div>
+      </AuthCard>
     )
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader>
-          <CardTitle className="text-2xl">Verify Your Email</CardTitle>
-          <CardDescription>
-            Please check your email for a verification link
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <p className="text-sm text-muted-foreground">
-            If you haven't received the email, you can request a new verification link.
-          </p>
-          <Button onClick={resendVerification} className="w-full">
-            Resend Verification Email
+    <AuthCard>
+      <div className="flex justify-center mb-6">
+        <div className="w-16 h-16 rounded-2xl bg-amber-500/20 flex items-center justify-center">
+          <Mail className="w-8 h-8 text-amber-400" />
+        </div>
+      </div>
+      <h1 className="text-2xl md:text-3xl font-bold text-white mb-2 text-center">
+        Verify Your Email
+      </h1>
+      <p className="text-stone-400 text-center mb-8">
+        Please check your email for a verification link. If you haven&apos;t received it, you can request a new one.
+      </p>
+      <div className="space-y-4">
+        <Button
+          onClick={resendVerification}
+          className="w-full h-12 text-base font-semibold bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-stone-950 shadow-lg shadow-amber-500/25 transition-all"
+        >
+          Resend Verification Email
+        </Button>
+        <Link href="/login" className="block">
+          <Button
+            variant="outline"
+            className="w-full h-12 text-base border-2 border-stone-700 text-stone-300 hover:border-amber-500/50 hover:text-amber-400 hover:bg-amber-500/5 transition-all"
+          >
+            Back to Login
           </Button>
-          <Link href="/login">
-            <Button variant="outline" className="w-full">
-              Back to Login
-            </Button>
-          </Link>
-        </CardContent>
-      </Card>
-    </div>
+        </Link>
+      </div>
+    </AuthCard>
   )
 }
 
 function VerifyEmailLoading() {
   return (
-    <div className="flex min-h-screen items-center justify-center p-4">
-      <Card className="w-full max-w-md">
-        <CardContent className="pt-6">
-          <p className="text-center">Loading...</p>
-        </CardContent>
-      </Card>
+    <div className="w-full max-w-md">
+      <div className="glass-card rounded-3xl p-8 md:p-10 border-amber-500/20 animate-pulse">
+        <div className="h-10 w-32 bg-stone-800 rounded-lg mb-8" />
+        <div className="h-8 w-48 bg-stone-800 rounded mb-2" />
+        <div className="h-4 w-32 bg-stone-800 rounded" />
+      </div>
     </div>
   )
 }

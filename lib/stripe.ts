@@ -1,8 +1,12 @@
 import Stripe from 'stripe'
+import { SUBSCRIPTION_TIERS } from './subscription-tiers'
 
 export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
   apiVersion: '2026-01-28.clover',
 })
+
+// Re-export for convenience in server components
+export { SUBSCRIPTION_TIERS }
 
 // Optional: Pre-created Stripe Price IDs
 // Set these in your .env file after creating products/prices in Stripe Dashboard
@@ -10,53 +14,6 @@ export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
 export const STRIPE_PRICE_IDS = {
   GROWTH: process.env.STRIPE_PRICE_ID_GROWTH || null,
   PRO: process.env.STRIPE_PRICE_ID_PRO || null,
-} as const
-
-export const SUBSCRIPTION_TIERS = {
-  FREE: {
-    name: 'Free',
-    price: 0,
-    employeeLimit: 5,
-    scheduleLimit: 1, // Only 1 active schedule at a time
-    features: [
-      'Core scheduling',
-      'Basic notifications',
-      'Up to 5 employees',
-      '1 active schedule',
-    ],
-  },
-  GROWTH: {
-    name: 'Growth',
-    price: 29,
-    priceId: STRIPE_PRICE_IDS.GROWTH,
-    employeeLimit: 15,
-    scheduleLimit: null, // Unlimited
-    features: [
-      'All Free features',
-      'Up to 15 employees',
-      'Unlimited schedules',
-      'AI schedule suggestions',
-      'Shift swap requests',
-      'Overtime alerts',
-      'Basic analytics',
-    ],
-  },
-  PRO: {
-    name: 'Pro',
-    price: 79,
-    priceId: STRIPE_PRICE_IDS.PRO,
-    employeeLimit: 100,
-    scheduleLimit: null, // Unlimited
-    features: [
-      'All Growth features',
-      'Up to 100 employees',
-      'Advanced AI recommendations',
-      'CSV payroll export',
-      'Advanced analytics',
-      'Custom roles & permissions',
-      'Priority support',
-    ],
-  },
 } as const
 
 /**
@@ -71,9 +28,10 @@ export function getLineItemForTier(tier: keyof typeof SUBSCRIPTION_TIERS) {
   }
 
   // If price ID is configured, use it (recommended for production)
-  if ('priceId' in tierInfo && tierInfo.priceId) {
+  const priceId = STRIPE_PRICE_IDS[tier as 'GROWTH' | 'PRO']
+  if (priceId) {
     return {
-      price: tierInfo.priceId,
+      price: priceId,
       quantity: 1,
     }
   }

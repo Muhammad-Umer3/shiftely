@@ -2,104 +2,126 @@
 
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
-import { ArrowRight, Check, Sparkles } from 'lucide-react'
+import { ArrowRight, Check, Calendar, Clock, Users, Zap } from 'lucide-react'
 
 export function HeroSection() {
   return (
-    <section className="relative overflow-hidden bg-gradient-to-br from-blue-50 via-white to-purple-50 py-20 md:py-32">
-      {/* Decorative background elements */}
-      <div className="absolute inset-0 -z-10 overflow-hidden">
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-blue-200 rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-blob"></div>
-        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-purple-200 rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-blob animation-delay-2000"></div>
-        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-80 h-80 bg-pink-200 rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-blob animation-delay-4000"></div>
+    <section className="relative min-h-screen overflow-hidden bg-stone-950 noise-overlay">
+      {/* Animated background elements */}
+      <div className="absolute inset-0 spotlight" />
+      <div className="absolute inset-0 grid-pattern" />
+      
+      {/* Floating orbs */}
+      <div className="absolute top-32 left-10 w-72 h-72 bg-amber-500/10 rounded-full blur-3xl animate-float" />
+      <div className="absolute bottom-20 right-10 w-96 h-96 bg-amber-600/5 rounded-full blur-3xl animate-float delay-300" />
+      
+      {/* Floating icons */}
+      <div className="absolute top-40 right-[15%] hidden lg:block animate-float delay-200">
+        <div className="glass-card p-4 rounded-2xl">
+          <Calendar className="w-8 h-8 text-amber-400" />
+        </div>
+      </div>
+      <div className="absolute top-60 left-[12%] hidden lg:block animate-float delay-500">
+        <div className="glass-card p-4 rounded-2xl">
+          <Clock className="w-8 h-8 text-amber-400" />
+        </div>
+      </div>
+      <div className="absolute bottom-40 right-[20%] hidden lg:block animate-float delay-700">
+        <div className="glass-card p-4 rounded-2xl">
+          <Users className="w-8 h-8 text-amber-400" />
+        </div>
       </div>
 
-      <div className="container mx-auto px-4 relative z-10">
-        <div className="mx-auto max-w-4xl text-center">
+      <div className="container mx-auto px-6 pt-32 pb-20 md:pt-40 md:pb-32 relative z-10">
+        <div className="mx-auto max-w-5xl text-center">
           {/* Badge */}
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-100 text-blue-700 text-sm font-medium mb-8">
-            <Sparkles className="h-4 w-4" />
-            <span>AI-Powered • Trusted by 500+ Businesses</span>
+          <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 text-sm font-medium mb-10 animate-fade-in-up">
+            <Zap className="h-4 w-4" />
+            <span>AI-Powered Scheduling • Trusted by 500+ Teams</span>
           </div>
 
-          <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl md:text-6xl lg:text-7xl">
-            Save 10+ Hours Per Week on
-            <span className="block bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-              Shift Scheduling
-            </span>
+          <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-bold tracking-tight animate-fade-in-up delay-100">
+            <span className="text-white">Save </span>
+            <span className="gradient-text">10+ Hours</span>
+            <br />
+            <span className="text-white">Every Week</span>
           </h1>
           
-          <p className="mt-6 text-lg leading-8 text-gray-600 sm:text-xl max-w-2xl mx-auto">
-            The AI-powered scheduling platform that eliminates conflicts, ensures compliance, 
-            and keeps your team happy. No more scheduling headaches—just smart automation.
+          <p className="mt-8 text-lg sm:text-xl leading-relaxed text-stone-400 max-w-2xl mx-auto animate-fade-in-up delay-200">
+            The intelligent scheduling platform that eliminates conflicts, 
+            automates shift management, and keeps your entire team in sync.
           </p>
 
           {/* Key Benefits */}
-          <div className="mt-8 flex flex-wrap items-center justify-center gap-6 text-sm text-gray-600">
+          <div className="mt-10 flex flex-wrap items-center justify-center gap-x-8 gap-y-4 text-sm text-stone-500 animate-fade-in-up delay-300">
             <div className="flex items-center gap-2">
-              <Check className="h-5 w-5 text-green-500" />
+              <div className="w-5 h-5 rounded-full bg-emerald-500/20 flex items-center justify-center">
+                <Check className="h-3 w-3 text-emerald-400" />
+              </div>
               <span>No credit card required</span>
             </div>
             <div className="flex items-center gap-2">
-              <Check className="h-5 w-5 text-green-500" />
+              <div className="w-5 h-5 rounded-full bg-emerald-500/20 flex items-center justify-center">
+                <Check className="h-3 w-3 text-emerald-400" />
+              </div>
               <span>14-day free trial</span>
             </div>
             <div className="flex items-center gap-2">
-              <Check className="h-5 w-5 text-green-500" />
+              <div className="w-5 h-5 rounded-full bg-emerald-500/20 flex items-center justify-center">
+                <Check className="h-3 w-3 text-emerald-400" />
+              </div>
               <span>Setup in 5 minutes</span>
             </div>
           </div>
 
           {/* CTAs */}
-          <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
+          <div className="mt-12 flex flex-col sm:flex-row items-center justify-center gap-5 animate-fade-in-up delay-400">
             <Link href="/register" className="w-full sm:w-auto">
-              <Button size="lg" className="w-full sm:w-auto text-lg px-8 py-6 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow-lg hover:shadow-xl transition-all">
+              <Button 
+                size="lg" 
+                className="w-full sm:w-auto text-lg px-10 py-7 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-stone-950 font-semibold shadow-2xl shadow-amber-500/25 hover:shadow-amber-500/40 transition-all animate-pulse-glow"
+              >
                 Start Free Trial
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
             </Link>
             <Link href="#features" className="w-full sm:w-auto">
-              <Button size="lg" variant="outline" className="w-full sm:w-auto text-lg px-8 py-6 border-2">
+              <Button 
+                size="lg" 
+                variant="outline" 
+                className="w-full sm:w-auto text-lg px-10 py-7 border-2 border-stone-700 text-stone-300 hover:border-amber-500/50 hover:text-amber-400 hover:bg-amber-500/5 transition-all"
+              >
                 See How It Works
               </Button>
             </Link>
           </div>
 
-          {/* Social Proof */}
-          <div className="mt-12 pt-8 border-t border-gray-200">
-            <p className="text-sm text-gray-500 mb-4">Trusted by teams at:</p>
-            <div className="flex flex-wrap items-center justify-center gap-8 opacity-60">
-              <div className="text-sm font-semibold text-gray-400">Restaurants</div>
-              <div className="text-sm font-semibold text-gray-400">Retail Stores</div>
-              <div className="text-sm font-semibold text-gray-400">Healthcare</div>
-              <div className="text-sm font-semibold text-gray-400">Service Businesses</div>
+          {/* Stats row */}
+          <div className="mt-20 pt-12 border-t border-stone-800 animate-fade-in-up delay-500">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+              <div className="text-center">
+                <div className="text-3xl md:text-4xl font-bold gradient-text">500+</div>
+                <div className="text-sm text-stone-500 mt-1">Teams Using</div>
+              </div>
+              <div className="text-center">
+                <div className="text-3xl md:text-4xl font-bold gradient-text">10K+</div>
+                <div className="text-sm text-stone-500 mt-1">Shifts Scheduled</div>
+              </div>
+              <div className="text-center">
+                <div className="text-3xl md:text-4xl font-bold gradient-text">95%</div>
+                <div className="text-sm text-stone-500 mt-1">Less Conflicts</div>
+              </div>
+              <div className="text-center">
+                <div className="text-3xl md:text-4xl font-bold gradient-text">4.8★</div>
+                <div className="text-sm text-stone-500 mt-1">User Rating</div>
+              </div>
             </div>
           </div>
         </div>
       </div>
 
-      <style jsx>{`
-        @keyframes blob {
-          0%, 100% {
-            transform: translate(0, 0) scale(1);
-          }
-          33% {
-            transform: translate(30px, -50px) scale(1.1);
-          }
-          66% {
-            transform: translate(-20px, 20px) scale(0.9);
-          }
-        }
-        .animate-blob {
-          animation: blob 7s infinite;
-        }
-        .animation-delay-2000 {
-          animation-delay: 2s;
-        }
-        .animation-delay-4000 {
-          animation-delay: 4s;
-        }
-      `}</style>
+      {/* Bottom gradient fade */}
+      <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-stone-900 to-transparent" />
     </section>
   )
 }
