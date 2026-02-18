@@ -24,50 +24,50 @@ export function ComplianceDashboard({ data }: { data: ComplianceData[] }) {
   return (
     <div className="space-y-6">
       <div className="grid gap-4 md:grid-cols-3">
-        <Card>
+        <Card className="border-stone-200 bg-white">
           <CardHeader>
-            <CardTitle>Total Weekly Hours</CardTitle>
+            <CardTitle className="text-stone-900">Total Weekly Hours</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{totalHours.toFixed(1)}h</div>
-            <p className="text-xs text-muted-foreground">Across all employees</p>
+            <div className="text-2xl font-bold text-stone-900">{totalHours.toFixed(1)}h</div>
+            <p className="text-xs text-stone-600">Across all employees</p>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="border-stone-200 bg-white">
           <CardHeader>
-            <CardTitle>Total Overtime</CardTitle>
+            <CardTitle className="text-stone-900">Total Overtime</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-orange-600">{totalOvertime.toFixed(1)}h</div>
-            <p className="text-xs text-muted-foreground">Overtime hours this week</p>
+            <div className="text-2xl font-bold text-amber-600">{totalOvertime.toFixed(1)}h</div>
+            <p className="text-xs text-stone-600">Overtime hours this week</p>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="border-stone-200 bg-white">
           <CardHeader>
-            <CardTitle>Overtime Alerts</CardTitle>
+            <CardTitle className="text-stone-900">Overtime Alerts</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-red-600">{employeesWithOvertime}</div>
-            <p className="text-xs text-muted-foreground">Employees over 40 hours</p>
+            <p className="text-xs text-stone-600">Employees over 40 hours</p>
           </CardContent>
         </Card>
       </div>
 
-      <Card>
+      <Card className="border-stone-200 bg-white">
         <CardHeader>
-          <CardTitle>Employee Hours Breakdown</CardTitle>
-          <CardDescription>Weekly hours and overtime status per employee</CardDescription>
+          <CardTitle className="text-stone-900">Employee Hours Breakdown</CardTitle>
+          <CardDescription className="text-stone-600">Weekly hours and overtime status per employee</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
             {data.map((item) => (
               <div
                 key={item.employee.id}
-                className="flex items-center justify-between p-4 border rounded-lg"
+                className="flex items-center justify-between p-4 border border-stone-200 rounded-lg bg-stone-50/50"
               >
                 <div>
-                  <p className="font-medium">{item.employee.name}</p>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="font-medium text-stone-900">{item.employee.name}</p>
+                  <p className="text-sm text-stone-600">
                     {item.weeklyHours.toFixed(1)} hours this week
                   </p>
                 </div>

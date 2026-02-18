@@ -1,6 +1,9 @@
 import { prisma } from '@/lib/db/prisma'
 import { Permission } from '@/lib/permissions/permissions'
 
+// Transaction client type - use when calling from within prisma.$transaction()
+type TxClient = Parameters<Parameters<typeof prisma.$transaction>[0]>[0]
+
 export class PermissionService {
   /**
    * Get all permissions for a user
@@ -242,10 +245,13 @@ export class PermissionService {
 
   /**
    * Get or create Admin role for an organization
+   * @param tx - Optional transaction client. Pass when called from within a transaction to avoid foreign key errors.
    */
-  static async getOrCreateAdminRole(organizationId: string) {
+  static async getOrCreateAdminRole(organizationId: string, tx?: TxClient) {
+    const client = tx ?? prisma
+
     // Try to find existing Admin role
-    let adminRole = await prisma.role.findFirst({
+    let adminRole = await client.role.findFirst({
       where: {
         organizationId,
         name: 'Admin',
@@ -255,7 +261,7 @@ export class PermissionService {
 
     if (!adminRole) {
       // Get all permissions
-      const allPermissions = await prisma.permission.findMany()
+      const allPermissions = await client.permission.findMany()
       const permissionMap = new Map<string, string>()
       for (const perm of allPermissions) {
         permissionMap.set(`${perm.resource}:${perm.action}`, perm.id)
@@ -268,7 +274,7 @@ export class PermissionService {
       ).filter(Boolean)
 
       // Create Admin role
-      adminRole = await prisma.role.create({
+      adminRole = await client.role.create({
         data: {
           organizationId,
           name: 'Admin',

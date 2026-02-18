@@ -2,7 +2,7 @@
 
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
-import { ArrowRight, Check, Sparkles } from 'lucide-react'
+import { ArrowRight, Sparkles } from 'lucide-react'
 
 export function CTASection() {
   return (
@@ -33,60 +33,29 @@ export function CTASection() {
             <div className="relative p-10 md:p-16 lg:p-20">
               <div className="text-center">
                 <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold tracking-tight text-stone-950 mb-6">
-                  Ready to save 10+ hours
-                  <span className="block">every week?</span>
+                  Ready to fix your
+                  <span className="block">scheduling headaches?</span>
                 </h2>
                 <p className="text-lg md:text-xl leading-relaxed text-stone-950/80 mb-10 max-w-2xl mx-auto">
-                  Join hundreds of teams using Shiftely to eliminate scheduling headaches and focus on what matters most.
+                  Join our early access list and be the first to try Shiftely. Tell us about your scheduling challenges and we&apos;ll reach out when we&apos;re ready for you.
                 </p>
 
-                {/* Key benefits */}
-                <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-4 mb-12 text-stone-950/80">
-                  <div className="flex items-center gap-2">
-                    <div className="w-6 h-6 rounded-full bg-stone-950/10 flex items-center justify-center">
-                      <Check className="h-4 w-4 text-stone-950" />
-                    </div>
-                    <span className="font-medium">No credit card required</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-6 h-6 rounded-full bg-stone-950/10 flex items-center justify-center">
-                      <Check className="h-4 w-4 text-stone-950" />
-                    </div>
-                    <span className="font-medium">14-day free trial</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-6 h-6 rounded-full bg-stone-950/10 flex items-center justify-center">
-                      <Check className="h-4 w-4 text-stone-950" />
-                    </div>
-                    <span className="font-medium">Cancel anytime</span>
-                  </div>
-                </div>
-
-                {/* CTAs */}
+                {/* CTA */}
                 <div className="flex flex-col sm:flex-row items-center justify-center gap-5">
-                  <Link href="/register" className="w-full sm:w-auto">
+                  <Link href="/#early-access" className="w-full sm:w-auto">
                     <Button 
                       size="lg" 
                       className="w-full sm:w-auto text-lg px-12 py-8 bg-stone-950 text-amber-400 hover:bg-stone-900 shadow-2xl shadow-stone-950/30 transition-all font-semibold"
                     >
-                      Start Free Trial
+                      Get Early Access
                       <ArrowRight className="ml-2 h-5 w-5" />
-                    </Button>
-                  </Link>
-                  <Link href="/login" className="w-full sm:w-auto">
-                    <Button 
-                      size="lg" 
-                      variant="outline" 
-                      className="w-full sm:w-auto text-lg px-12 py-8 bg-transparent border-2 border-stone-950/30 text-stone-950 hover:bg-stone-950/10 hover:border-stone-950/50 font-semibold"
-                    >
-                      Sign In
                     </Button>
                   </Link>
                 </div>
 
                 {/* Trust indicators */}
                 <p className="mt-10 text-sm text-stone-950/60 font-medium">
-                  Trusted by 500+ businesses • 4.8/5 average rating • 30-day money-back guarantee
+                  Built for small teams • Scheduling made simple
                 </p>
               </div>
             </div>
@@ -117,7 +86,7 @@ export function CTASection() {
               <Link href="/cookies" className="text-stone-500 hover:text-amber-400 transition-colors">
                 Cookies
               </Link>
-              <Link href="/help/contact" className="text-stone-500 hover:text-amber-400 transition-colors">
+              <Link href="/contact" className="text-stone-500 hover:text-amber-400 transition-colors">
                 Contact
               </Link>
             </div>

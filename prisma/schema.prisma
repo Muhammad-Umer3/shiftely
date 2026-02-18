@@ -130,13 +130,16 @@ model Employee {
 }
 
 model Schedule {
-  id            String         @id @default(cuid())
-  organizationId String
-  weekStartDate DateTime
-  status        ScheduleStatus @default(DRAFT)
-  createdById   String
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
+  id                  String         @id @default(cuid())
+  organizationId      String
+  weekStartDate       DateTime
+  name                String?
+  assignedEmployeeIds String[]       @default([])
+  displaySettings     Json?          // { startHour, endHour, workingDays }
+  status              ScheduleStatus @default(DRAFT)
+  createdById         String
+  createdAt           DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
 
   organization  Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   createdBy     User           @relation("ScheduleCreator", fields: [createdById], references: [id])
@@ -367,4 +370,14 @@ model Invitation {
   @@index([token])
   @@index([status])
   @@map("invitations")
+}
+
+model EarlyAccessSignup {
+  id        String   @id @default(cuid())
+  email     String
+  message   String
+  createdAt DateTime @default(now())
+
+  @@index([email])
+  @@map("early_access_signups")
 }

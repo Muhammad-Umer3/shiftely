@@ -13,7 +13,7 @@ export function StepSchedule({ onComplete }: { onComplete: () => void }) {
         Create a schedule for the current week. You can create more schedules from the Schedule page.
       </p>
       <div className="flex gap-2">
-        <Link href="/dashboard/schedule">
+        <Link href="/dashboard/schedules">
           <Button>Create Schedule</Button>
         </Link>
         <Button variant="outline" onClick={onComplete}>

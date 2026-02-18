@@ -37,7 +37,7 @@ export function HeroSection() {
           {/* Badge */}
           <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 text-sm font-medium mb-10 animate-fade-in-up">
             <Zap className="h-4 w-4" />
-            <span>AI-Powered Scheduling • Trusted by 500+ Teams</span>
+            <span>Built for small teams • Coming soon for SMEs</span>
           </div>
 
           <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-bold tracking-tight animate-fade-in-up delay-100">
@@ -58,40 +58,40 @@ export function HeroSection() {
               <div className="w-5 h-5 rounded-full bg-emerald-500/20 flex items-center justify-center">
                 <Check className="h-3 w-3 text-emerald-400" />
               </div>
-              <span>No credit card required</span>
+              <span>Join the waitlist</span>
             </div>
             <div className="flex items-center gap-2">
               <div className="w-5 h-5 rounded-full bg-emerald-500/20 flex items-center justify-center">
                 <Check className="h-3 w-3 text-emerald-400" />
               </div>
-              <span>14-day free trial</span>
+              <span>Be first to try</span>
             </div>
             <div className="flex items-center gap-2">
               <div className="w-5 h-5 rounded-full bg-emerald-500/20 flex items-center justify-center">
                 <Check className="h-3 w-3 text-emerald-400" />
               </div>
-              <span>Setup in 5 minutes</span>
+              <span>Built for small teams</span>
             </div>
           </div>
 
           {/* CTAs */}
           <div className="mt-12 flex flex-col sm:flex-row items-center justify-center gap-5 animate-fade-in-up delay-400">
-            <Link href="/register" className="w-full sm:w-auto">
+            <Link href="/#early-access" className="w-full sm:w-auto">
               <Button 
                 size="lg" 
                 className="w-full sm:w-auto text-lg px-10 py-7 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-stone-950 font-semibold shadow-2xl shadow-amber-500/25 hover:shadow-amber-500/40 transition-all animate-pulse-glow"
               >
-                Start Free Trial
+                Get Early Access
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
             </Link>
-            <Link href="#features" className="w-full sm:w-auto">
+            <Link href="/#features" className="w-full sm:w-auto">
               <Button 
                 size="lg" 
                 variant="outline" 
                 className="w-full sm:w-auto text-lg px-10 py-7 border-2 border-stone-700 text-stone-300 hover:border-amber-500/50 hover:text-amber-400 hover:bg-amber-500/5 transition-all"
               >
-                See How It Works
+                Learn More
               </Button>
             </Link>
           </div>
@@ -100,20 +100,20 @@ export function HeroSection() {
           <div className="mt-20 pt-12 border-t border-stone-800 animate-fade-in-up delay-500">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
               <div className="text-center">
-                <div className="text-3xl md:text-4xl font-bold gradient-text">500+</div>
-                <div className="text-sm text-stone-500 mt-1">Teams Using</div>
+                <div className="text-3xl md:text-4xl font-bold gradient-text">SME</div>
+                <div className="text-sm text-stone-500 mt-1">Focused</div>
               </div>
               <div className="text-center">
-                <div className="text-3xl md:text-4xl font-bold gradient-text">10K+</div>
-                <div className="text-sm text-stone-500 mt-1">Shifts Scheduled</div>
+                <div className="text-3xl md:text-4xl font-bold gradient-text">Simple</div>
+                <div className="text-sm text-stone-500 mt-1">Scheduling</div>
               </div>
               <div className="text-center">
                 <div className="text-3xl md:text-4xl font-bold gradient-text">95%</div>
                 <div className="text-sm text-stone-500 mt-1">Less Conflicts</div>
               </div>
               <div className="text-center">
-                <div className="text-3xl md:text-4xl font-bold gradient-text">4.8★</div>
-                <div className="text-sm text-stone-500 mt-1">User Rating</div>
+                <div className="text-3xl md:text-4xl font-bold gradient-text">5 min</div>
+                <div className="text-sm text-stone-500 mt-1">Setup Time</div>
               </div>
             </div>
           </div>

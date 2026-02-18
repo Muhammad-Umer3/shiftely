@@ -1,21 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAuth } from '@/lib/utils/auth'
+import { prisma } from '@/lib/db/prisma'
 import { SchedulerService } from '@/server/services/scheduler/scheduler.service'
 import { SubscriptionService } from '@/server/services/subscription/subscription.service'
 import { startOfWeek } from 'date-fns'
+
+const DEFAULT_DISPLAY = { startHour: 6, endHour: 22, workingDays: [1, 2, 3, 4, 5] }
 
 export async function POST(req: NextRequest) {
   try {
     const user = await requireAuth()
     const body = await req.json()
-    const { weekStartDate, autoFill } = body
+    const { weekStartDate, autoFill, name, assignedEmployeeIds } = body
 
     const weekStart = weekStartDate ? new Date(weekStartDate) : startOfWeek(new Date(), { weekStartsOn: 1 })
 
     // Check if schedule already exists
     const existing = await SchedulerService.getScheduleForWeek(user.organizationId, weekStart)
     if (existing) {
-      return NextResponse.json({ schedule: existing }, { status: 200 })
+      return NextResponse.json({ schedule: existing, existing: true }, { status: 200 })
     }
 
     // Check subscription limits for new schedules
@@ -30,14 +33,33 @@ export async function POST(req: NextRequest) {
       )
     }
 
+    const org = await prisma.organization.findUnique({ where: { id: user.organizationId } })
+    const orgSettings = (org?.settings as Record<string, unknown>) ?? {}
+    const scheduleSettings = (orgSettings.scheduleSettings as { startHour?: number; endHour?: number; workingDays?: number[] }) ?? {}
+    const displaySettings = {
+      startHour: scheduleSettings.startHour ?? DEFAULT_DISPLAY.startHour,
+      endHour: scheduleSettings.endHour ?? DEFAULT_DISPLAY.endHour,
+      workingDays: Array.isArray(scheduleSettings.workingDays) ? scheduleSettings.workingDays : DEFAULT_DISPLAY.workingDays,
+    }
+
     const schedule = await SchedulerService.createSchedule(
       user.organizationId,
       weekStart,
-      user.id
+      user.id,
+      {
+        name: typeof name === 'string' ? name : undefined,
+        assignedEmployeeIds: Array.isArray(assignedEmployeeIds) ? assignedEmployeeIds : undefined,
+        displaySettings,
+      }
     )
 
     if (autoFill) {
-      await SchedulerService.autoFillShifts(schedule.id, user.organizationId, weekStart)
+      await SchedulerService.autoFillShifts(
+        schedule.id,
+        user.organizationId,
+        weekStart,
+        schedule.assignedEmployeeIds.length > 0 ? schedule.assignedEmployeeIds : undefined
+      )
     }
 
     return NextResponse.json({ schedule }, { status: 201 })
@@ -52,6 +74,24 @@ export async function GET(req: NextRequest) {
     const user = await requireAuth()
     const { searchParams } = new URL(req.url)
     const weekStartDate = searchParams.get('weekStartDate')
+    const list = searchParams.get('list') === 'true'
+    const month = searchParams.get('month')
+
+    if (list) {
+      let schedules = await SchedulerService.listSchedules(user.organizationId)
+      if (month) {
+        const [y, m] = month.split('-').map(Number)
+        const monthStart = new Date(y, m - 1, 1)
+        const monthEnd = new Date(y, m, 0)
+        schedules = schedules.filter((s) => {
+          const weekStart = new Date(s.weekStartDate)
+          const weekEnd = new Date(weekStart)
+          weekEnd.setDate(weekEnd.getDate() + 6)
+          return weekStart <= monthEnd && weekEnd >= monthStart
+        })
+      }
+      return NextResponse.json({ schedules }, { status: 200 })
+    }
 
     const weekStart = weekStartDate
       ? new Date(weekStartDate)

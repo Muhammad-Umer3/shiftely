@@ -9,6 +9,17 @@
   scroll-behavior: smooth;
 }
 
+/* Pointer cursor for interactive elements */
+button,
+a,
+[role="button"],
+input[type="submit"],
+input[type="reset"],
+select,
+label[for] {
+  cursor: pointer;
+}
+
 /* Custom scrollbar */
 ::-webkit-scrollbar {
   width: 8px;

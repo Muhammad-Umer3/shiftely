@@ -4,6 +4,20 @@ import { prisma } from '@/lib/db/prisma'
 import bcrypt from 'bcryptjs'
 import { SubscriptionService } from '@/server/services/subscription/subscription.service'
 
+export async function GET() {
+  try {
+    const user = await requireAuth()
+    const employees = await prisma.employee.findMany({
+      where: { organizationId: user.organizationId },
+      include: { user: true },
+    })
+    return NextResponse.json({ employees }, { status: 200 })
+  } catch (error) {
+    console.error('Error fetching employees:', error)
+    return NextResponse.json({ message: 'Internal server error' }, { status: 500 })
+  }
+}
+
 export async function POST(req: NextRequest) {
   try {
     const user = await requireAuth()

@@ -6,44 +6,44 @@ import { useEffect, useRef, useState } from 'react'
 const features = [
   {
     icon: Brain,
-    title: 'AI-Powered Scheduling',
-    description: 'Let AI analyze availability, skills, and preferences to suggest optimal schedules automatically.',
+    title: 'No more spreadsheet chaos',
+    description: 'Replace messy spreadsheets with a simple calendar. One place for everyone\'s shifts.',
     highlight: true,
   },
   {
     icon: Calendar,
-    title: 'Drag & Drop Interface',
-    description: 'Intuitive calendar view makes scheduling as easy as dragging shifts into place.',
+    title: 'Last-minute callouts?',
+    description: 'Quickly reassign shifts with drag-and-drop. No more scrambling when someone can\'t make it.',
   },
   {
     icon: Users,
-    title: 'Team Management',
-    description: 'Complete employee profiles with availability tracking, roles, and skills management.',
+    title: 'Availability scattered everywhere',
+    description: 'Centralize who can work when. No more digging through texts and notes.',
   },
   {
     icon: Bell,
-    title: 'Smart Notifications',
-    description: 'Automatic email notifications keep your team informed about schedule changes.',
+    title: '"I didn\'t know I was working"',
+    description: 'Automatic notifications so your team always knows their schedule.',
   },
   {
     icon: Shield,
-    title: 'Compliance Built-In',
-    description: 'Automatic overtime detection, hours tracking, and compliance alerts included.',
+    title: 'Labor law headaches',
+    description: 'Automatic overtime detection and hours tracking. Stay compliant without the stress.',
   },
   {
     icon: TrendingUp,
-    title: 'Analytics & Insights',
-    description: 'Track hours, costs, and efficiency metrics with powerful analytics.',
+    title: 'Where did the hours go?',
+    description: 'See costs, coverage gaps, and who\'s overworked at a glance.',
   },
   {
     icon: Clock,
-    title: 'Shift Swaps',
-    description: 'Employees can request shift swaps. Managers approve with one click.',
+    title: 'Shift swaps eating your time',
+    description: 'Employees request swaps; you approve with one click. No back-and-forth.',
   },
   {
     icon: Zap,
-    title: 'Payroll Export',
-    description: 'Export schedules to CSV for seamless payroll integration.',
+    title: 'Payroll integration pain',
+    description: 'Export to CSV for seamless payroll. No manual data entry.',
   },
 ]
 
@@ -123,11 +123,11 @@ export function FeaturesSection() {
             Features
           </span>
           <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
-            Everything you need to
-            <span className="block gradient-text">manage shifts effortlessly</span>
+            Built for the scheduling headaches
+            <span className="block gradient-text">small teams face</span>
           </h2>
           <p className="text-lg text-stone-400">
-            Powerful features designed to save you time and eliminate scheduling headaches
+            We solve the pain points that keep SME managers up at night
           </p>
         </div>
 
@@ -148,7 +148,7 @@ export function FeaturesSection() {
             
             <div className="relative p-10 md:p-16">
               <h3 className="text-2xl md:text-3xl font-bold mb-10 text-center text-stone-950">
-                Why Teams Choose Shiftely
+                Why Small Teams Choose Shiftely
               </h3>
               <div className="grid md:grid-cols-3 gap-10 text-center">
                 <div className="space-y-2">

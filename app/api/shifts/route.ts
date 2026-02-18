@@ -6,7 +6,7 @@ export async function POST(req: NextRequest) {
   try {
     const user = await requireAuth()
     const body = await req.json()
-    const { organizationId, employeeId, startTime, endTime, position } = body
+    const { organizationId, employeeId, startTime, endTime, position, scheduleId } = body
 
     if (organizationId !== user.organizationId) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 403 })
@@ -22,6 +22,17 @@ export async function POST(req: NextRequest) {
         createdById: user.id,
       },
     })
+
+    if (scheduleId) {
+      const schedule = await prisma.schedule.findFirst({
+        where: { id: scheduleId, organizationId: user.organizationId },
+      })
+      if (schedule) {
+        await prisma.scheduleShift.create({
+          data: { scheduleId, shiftId: shift.id },
+        })
+      }
+    }
 
     return NextResponse.json({ shift }, { status: 201 })
   } catch (error) {

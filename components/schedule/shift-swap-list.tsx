@@ -18,6 +18,7 @@ type ShiftSwap = {
     } | null
   }
   requester: {
+    id: string
     name: string | null
     email: string
   }
@@ -77,25 +78,25 @@ export function ShiftSwapList({
   }
 
   if (swaps.length === 0) {
-    return <p className="text-muted-foreground">No shift swap requests</p>
+    return <p className="text-stone-600">No shift swap requests</p>
   }
 
   return (
     <div className="space-y-4">
       {swaps.map((swap) => {
-        const isRequester = swap.requester.email === currentUserId
+        const isRequester = swap.requester.id === currentUserId
         const canApprove = !isRequester && swap.status === 'PENDING'
 
         return (
-          <div key={swap.id} className="border rounded-lg p-4 space-y-2">
+          <div key={swap.id} className="border border-stone-200 rounded-lg p-4 space-y-2 bg-white hover:border-amber-500/30 transition-colors">
             <div className="flex items-center justify-between">
               <div>
-                <p className="font-medium">
+                <p className="font-medium text-stone-900">
                   {format(new Date(swap.shift.startTime), 'MMM d, yyyy')} -{' '}
                   {format(new Date(swap.shift.startTime), 'h:mm a')} to{' '}
                   {format(new Date(swap.shift.endTime), 'h:mm a')}
                 </p>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-sm text-stone-600">
                   {isRequester ? 'You requested' : `${swap.requester.name || swap.requester.email} requested`} to swap
                   {swap.targetEmployee
                     ? ` with ${swap.targetEmployee.name || swap.targetEmployee.email}`
@@ -120,6 +121,7 @@ export function ShiftSwapList({
                       size="sm"
                       onClick={() => handleApprove(swap.id)}
                       disabled={processing === swap.id}
+                      className="bg-amber-500 hover:bg-amber-600 text-stone-950"
                     >
                       Approve
                     </Button>
@@ -128,6 +130,7 @@ export function ShiftSwapList({
                       variant="outline"
                       onClick={() => handleReject(swap.id)}
                       disabled={processing === swap.id}
+                      className="border-stone-300 text-stone-700 hover:bg-red-50 hover:border-red-300"
                     >
                       Reject
                     </Button>

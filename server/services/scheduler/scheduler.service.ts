@@ -1,5 +1,6 @@
+import { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/db/prisma'
-import { startOfWeek, endOfWeek, eachDayOfInterval } from 'date-fns'
+import { startOfWeek, endOfWeek, eachDayOfInterval, addDays } from 'date-fns'
 
 export class SchedulerService {
   /**
@@ -8,7 +9,8 @@ export class SchedulerService {
   static async createSchedule(
     organizationId: string,
     weekStartDate: Date,
-    createdById: string
+    createdById: string,
+    options?: { name?: string; assignedEmployeeIds?: string[]; displaySettings?: { startHour: number; endHour: number; workingDays: number[] } }
   ) {
     const schedule = await prisma.schedule.create({
       data: {
@@ -16,10 +18,50 @@ export class SchedulerService {
         weekStartDate,
         status: 'DRAFT',
         createdById,
+        name: options?.name ?? null,
+        assignedEmployeeIds: options?.assignedEmployeeIds ?? [],
+        displaySettings: options?.displaySettings ? (options.displaySettings as object) : undefined,
       },
     })
 
     return schedule
+  }
+
+  /**
+   * Update schedule name and/or assigned employees
+   */
+  static async updateSchedule(
+    scheduleId: string,
+    organizationId: string,
+    data: {
+      name?: string
+      assignedEmployeeIds?: string[]
+      displaySettings?: { startHour: number; endHour: number; workingDays: number[] } | null
+    }
+  ) {
+    return prisma.schedule.update({
+      where: { id: scheduleId, organizationId },
+      data: {
+        ...(data.name !== undefined && { name: data.name || null }),
+        ...(data.assignedEmployeeIds !== undefined && { assignedEmployeeIds: data.assignedEmployeeIds }),
+        ...(data.displaySettings !== undefined && {
+          displaySettings: data.displaySettings === null ? Prisma.DbNull : (data.displaySettings as Prisma.InputJsonValue),
+        }),
+      },
+      include: {
+        scheduleShifts: {
+          include: {
+            shift: {
+              include: {
+                employee: {
+                  include: { user: true },
+                },
+              },
+            },
+          },
+        },
+      },
+    })
   }
 
   /**
@@ -65,6 +107,31 @@ export class SchedulerService {
   }
 
   /**
+   * List all schedules for an organization (most recent first)
+   */
+  static async listSchedules(organizationId: string, limit = 20) {
+    const schedules = await prisma.schedule.findMany({
+      where: { organizationId },
+      orderBy: { weekStartDate: 'desc' },
+      take: limit,
+      include: {
+        scheduleShifts: {
+          include: {
+            shift: {
+              include: {
+                employee: {
+                  include: { user: true },
+                },
+              },
+            },
+          },
+        },
+      },
+    })
+    return schedules
+  }
+
+  /**
    * Get schedule for a specific week
    */
   static async getScheduleForWeek(organizationId: string, weekStartDate: Date) {
@@ -93,14 +160,20 @@ export class SchedulerService {
 
   /**
    * Auto-fill shifts based on employee availability
+   * If assignedEmployeeIds is provided and non-empty, only those employees are used
    */
   static async autoFillShifts(
     scheduleId: string,
     organizationId: string,
-    weekStartDate: Date
+    weekStartDate: Date,
+    assignedEmployeeIds?: string[]
   ) {
+    const where: { organizationId: string; id?: { in: string[] } } = { organizationId }
+    if (assignedEmployeeIds && assignedEmployeeIds.length > 0) {
+      where.id = { in: assignedEmployeeIds }
+    }
     const employees = await prisma.employee.findMany({
-      where: { organizationId },
+      where,
       include: { user: true },
     })
 
@@ -172,6 +245,90 @@ export class SchedulerService {
     )
 
     return createdShifts
+  }
+
+  /**
+   * Copy shifts from a source week to a target week (same employee assignments and times)
+   */
+  static async copyFromPreviousWeek(
+    organizationId: string,
+    sourceWeekStart: Date,
+    targetWeekStart: Date,
+    createdById: string
+  ) {
+    const sourceSchedule = await this.getScheduleForWeek(organizationId, sourceWeekStart)
+    if (!sourceSchedule || sourceSchedule.scheduleShifts.length === 0) {
+      return { schedule: null, copiedCount: 0 }
+    }
+
+    const sourceStart = startOfWeek(sourceWeekStart, { weekStartsOn: 1 })
+    const targetStart = startOfWeek(targetWeekStart, { weekStartsOn: 1 })
+    const dayOffset =
+      (targetStart.getTime() - sourceStart.getTime()) / (1000 * 60 * 60 * 24)
+
+    let targetSchedule = await this.getScheduleForWeek(organizationId, targetWeekStart)
+    if (!targetSchedule) {
+      targetSchedule = await prisma.schedule.create({
+        data: {
+          organizationId,
+          weekStartDate: targetStart,
+          status: 'DRAFT',
+          createdById,
+          name: sourceSchedule.name,
+          assignedEmployeeIds: sourceSchedule.assignedEmployeeIds ?? [],
+          displaySettings: sourceSchedule.displaySettings as object | undefined,
+        },
+        include: {
+          scheduleShifts: true,
+        },
+      }) as NonNullable<Awaited<ReturnType<typeof this.getScheduleForWeek>>>
+    } else {
+      // Clear existing shifts when replacing
+      const scheduleId = targetSchedule.id
+      for (const ss of targetSchedule.scheduleShifts) {
+        await prisma.scheduleShift.delete({
+          where: {
+            scheduleId_shiftId: {
+              scheduleId,
+              shiftId: ss.shiftId,
+            },
+          },
+        })
+        await prisma.shift.delete({ where: { id: ss.shiftId } })
+      }
+    }
+
+    const targetScheduleId = targetSchedule.id
+    const createdShifts: any[] = []
+    for (const { shift } of sourceSchedule.scheduleShifts) {
+      const oldStart = new Date(shift.startTime)
+      const oldEnd = new Date(shift.endTime)
+      const newStart = addDays(oldStart, dayOffset)
+      const newEnd = addDays(oldEnd, dayOffset)
+
+      const newShift = await prisma.shift.create({
+        data: {
+          organizationId,
+          employeeId: shift.employeeId,
+          startTime: newStart,
+          endTime: newEnd,
+          position: shift.position,
+          createdById,
+        },
+      })
+      await prisma.scheduleShift.create({
+        data: {
+          scheduleId: targetScheduleId,
+          shiftId: newShift.id,
+        },
+      })
+      createdShifts.push(newShift)
+    }
+
+    return {
+      schedule: await this.getScheduleForWeek(organizationId, targetWeekStart),
+      copiedCount: createdShifts.length,
+    }
   }
 
   /**

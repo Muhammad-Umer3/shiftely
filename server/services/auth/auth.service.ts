@@ -54,9 +54,10 @@ export class AuthService {
         },
       })
 
-      // Get or create Admin role for the organization
+      // Get or create Admin role for the organization (must use tx - org not committed yet)
       const adminRole = await PermissionService.getOrCreateAdminRole(
-        organization.id
+        organization.id,
+        tx
       )
 
       // Assign admin role to user

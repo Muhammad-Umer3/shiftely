@@ -5,27 +5,22 @@ import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { format } from 'date-fns'
 import { ShiftCard } from './shift-card'
 import { Button } from '@/components/ui/button'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog'
 import { useState } from 'react'
 
-const timeSlots = [
-  '06:00',
-  '07:00',
-  '08:00',
-  '09:00',
-  '10:00',
-  '11:00',
-  '12:00',
-  '13:00',
-  '14:00',
-  '15:00',
-  '16:00',
-  '17:00',
-  '18:00',
-  '19:00',
-  '20:00',
-  '21:00',
-  '22:00',
-]
+function buildTimeSlots(startHour: number, endHour: number): string[] {
+  const slots: string[] = []
+  for (let h = startHour; h < endHour; h++) {
+    slots.push(`${h.toString().padStart(2, '0')}:00`)
+  }
+  return slots
+}
 
 type Shift = {
   id: string
@@ -55,13 +50,20 @@ export function ScheduleDayColumn({
   shifts,
   employees,
   onCreateShift,
+  shiftWarnings = {},
+  startHour = 6,
+  endHour = 22,
 }: {
   day: Date
   dayName: string
   shifts: Shift[]
   employees: Employee[]
   onCreateShift: (date: Date, timeSlot: string, employeeId: string) => void
+  shiftWarnings?: Record<string, { overtime?: boolean; conflict?: boolean }>
+  startHour?: number
+  endHour?: number
 }) {
+  const timeSlots = buildTimeSlots(startHour, endHour)
   const [selectedTimeSlot, setSelectedTimeSlot] = useState<string | null>(null)
   const [selectedEmployee, setSelectedEmployee] = useState<string | null>(null)
 
@@ -94,7 +96,7 @@ export function ScheduleDayColumn({
     >
       <div className="sticky top-0 bg-white z-10 pb-2 border-b mb-2">
         <h3 className="font-semibold text-center">{dayName}</h3>
-        <p className="text-xs text-center text-muted-foreground">{format(day, 'MMM d')}</p>
+        <p className="text-xs text-center text-stone-500">{format(day, 'MMM d')}</p>
       </div>
 
       <div className="space-y-2">
@@ -104,11 +106,16 @@ export function ScheduleDayColumn({
 
           return (
             <div key={timeSlot} className="space-y-1">
-              <div className="text-xs text-muted-foreground px-1">{timeSlot}</div>
+              <div className="text-xs text-stone-500 px-1">{timeSlot}</div>
               <div className="min-h-[60px] border rounded p-1 space-y-1">
                 <SortableContext items={slotShifts.map((s) => s.id)} strategy={verticalListSortingStrategy}>
                   {slotShifts.map((shift) => (
-                    <ShiftCard key={shift.id} shift={shift} />
+                    <ShiftCard
+                      key={shift.id}
+                      shift={shift}
+                      hasOvertime={shiftWarnings[shift.id]?.overtime}
+                      hasConflict={shiftWarnings[shift.id]?.conflict}
+                    />
                   ))}
                 </SortableContext>
                 {slotShifts.length === 0 && (
@@ -127,17 +134,20 @@ export function ScheduleDayColumn({
         })}
       </div>
 
-      {selectedTimeSlot && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white p-4 rounded-lg space-y-4 min-w-[300px]">
-            <h3 className="font-semibold">Create Shift</h3>
+      <Dialog open={!!selectedTimeSlot} onOpenChange={(open) => !open && setSelectedTimeSlot(null)}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Create shift</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
             <div>
-              <label className="text-sm font-medium">Time: {selectedTimeSlot}</label>
+              <label className="text-sm font-medium text-stone-700 block mb-1">Time</label>
+              <p className="text-stone-600">{selectedTimeSlot}</p>
             </div>
             <div>
-              <label className="text-sm font-medium block mb-2">Select Employee:</label>
+              <label className="text-sm font-medium text-stone-700 block mb-2">Employee</label>
               <select
-                className="w-full border rounded p-2"
+                className="w-full border border-stone-200 rounded-lg px-3 py-2 text-stone-900 bg-white focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
                 value={selectedEmployee || ''}
                 onChange={(e) => setSelectedEmployee(e.target.value)}
               >
@@ -149,17 +159,17 @@ export function ScheduleDayColumn({
                 ))}
               </select>
             </div>
-            <div className="flex gap-2">
-              <Button onClick={handleCreateShift} disabled={!selectedEmployee}>
-                Create
-              </Button>
-              <Button variant="outline" onClick={() => setSelectedTimeSlot(null)}>
-                Cancel
-              </Button>
-            </div>
           </div>
-        </div>
-      )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setSelectedTimeSlot(null)}>
+              Cancel
+            </Button>
+            <Button onClick={handleCreateShift} disabled={!selectedEmployee}>
+              Create
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

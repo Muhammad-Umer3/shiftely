@@ -77,7 +77,7 @@ export default function RegisterPage() {
             Create your account
           </h1>
           <p className="text-stone-400">
-            Start your 14-day free trial. No credit card required.
+            Start your 7-day free trial. Credit card required.
           </p>
         </div>
 

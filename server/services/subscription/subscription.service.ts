@@ -10,11 +10,7 @@ export class SubscriptionService {
       where: { id: organizationId },
       include: {
         employees: true,
-        schedules: {
-          where: {
-            status: 'PUBLISHED',
-          },
-        },
+        schedules: true, // Count all schedules for limit (FREE: 1 total)
       },
     })
 
@@ -77,7 +73,9 @@ export class SubscriptionService {
 
     return {
       allowed: false,
-      reason: `You've reached the schedule limit for your ${info.tierInfo.name} plan (${info.scheduleLimit} active schedule).`,
+      reason: info.scheduleLimit === 1
+        ? 'Only 1 schedule is allowed on the Free plan. Upgrade to create more.'
+        : `You've reached the schedule limit for your ${info.tierInfo.name} plan (${info.scheduleLimit} active schedules).`,
       upgradeRequired: true,
     }
   }

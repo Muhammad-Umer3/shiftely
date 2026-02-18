@@ -25,7 +25,7 @@ export function Sidebar() {
 
   const allNavigation = [
     { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-    { name: 'Schedule', href: '/dashboard/schedule', icon: Calendar, permission: PERMISSIONS.SCHEDULE_VIEW },
+    { name: 'Schedules', href: '/dashboard/schedules', icon: Calendar, permission: PERMISSIONS.SCHEDULE_VIEW },
     { name: 'Employees', href: '/dashboard/employees', icon: Users, permission: PERMISSIONS.EMPLOYEE_VIEW },
     { name: 'Swaps', href: '/dashboard/swaps', icon: Calendar, permission: PERMISSIONS.SWAP_VIEW },
     { name: 'Compliance', href: '/dashboard/compliance', icon: AlertCircle, permission: PERMISSIONS.COMPLIANCE_VIEW },
@@ -37,13 +37,15 @@ export function Sidebar() {
 
   return (
     <>
-      <div className="hidden md:flex h-full w-64 flex-col bg-gray-900 text-white">
-        <div className="flex h-16 items-center border-b border-gray-800 px-6">
-          <h1 className="text-xl font-bold">Shiftely</h1>
+      <div className="hidden md:flex h-full w-64 flex-col bg-stone-950 border-r border-stone-800">
+        <div className="flex h-16 items-center border-b border-stone-800 px-6">
+          <h1 className="text-xl font-bold text-white">Shiftely</h1>
         </div>
         <nav className="flex-1 space-y-1 px-3 py-4">
           {navigation.map((item) => {
-            const isActive = pathname === item.href || pathname?.startsWith(item.href + '/')
+            const isActive = item.href === '/dashboard'
+              ? pathname === '/dashboard'
+              : pathname === item.href || pathname?.startsWith(item.href + '/')
             return (
               <Link
                 key={item.name}
@@ -51,8 +53,8 @@ export function Sidebar() {
                 className={cn(
                   'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
                   isActive
-                    ? 'bg-gray-800 text-white'
-                    : 'text-gray-300 hover:bg-gray-800 hover:text-white'
+                    ? 'bg-amber-500/15 text-amber-400 border border-amber-500/20'
+                    : 'text-stone-400 hover:bg-stone-800 hover:text-stone-200'
                 )}
               >
                 <item.icon className="h-5 w-5" />
@@ -61,10 +63,10 @@ export function Sidebar() {
             )
           })}
         </nav>
-        <div className="border-t border-gray-800 p-4">
+        <div className="border-t border-stone-800 p-4">
           <button
             onClick={() => signOut()}
-            className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-gray-300 transition-colors hover:bg-gray-800 hover:text-white"
+            className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-stone-400 transition-colors hover:bg-stone-800 hover:text-stone-200"
           >
             <LogOut className="h-5 w-5" />
             Sign Out
@@ -72,16 +74,18 @@ export function Sidebar() {
         </div>
       </div>
       {/* Mobile bottom navigation */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t flex justify-around items-center h-16 z-50">
+      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-stone-950 border-t border-stone-800 flex justify-around items-center h-16 z-50">
         {navigation.map((item) => {
-          const isActive = pathname === item.href || pathname?.startsWith(item.href + '/')
+          const isActive = item.href === '/dashboard'
+            ? pathname === '/dashboard'
+            : pathname === item.href || pathname?.startsWith(item.href + '/')
           return (
             <Link
               key={item.name}
               href={item.href}
               className={cn(
                 'flex flex-col items-center justify-center gap-1 p-2 text-xs',
-                isActive ? 'text-blue-600' : 'text-gray-600'
+                isActive ? 'text-amber-400' : 'text-stone-400'
               )}
             >
               <item.icon className="h-5 w-5" />

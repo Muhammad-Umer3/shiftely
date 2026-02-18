@@ -43,7 +43,7 @@ export function PricingSection() {
             <span className="block gradient-text">pricing for everyone</span>
           </h2>
           <p className="text-lg text-stone-400">
-            Start free, upgrade when you&apos;re ready. No credit card required.
+            Simple pricing for small teams. Pricing details coming soon.
           </p>
         </div>
 
@@ -101,32 +101,22 @@ export function PricingSection() {
                       ))}
                     </ul>
                     
-                    {isFree ? (
-                      <Link href="/register" className="block">
-                        <Button 
-                          className="w-full py-6 text-base border-2 border-stone-700 bg-transparent text-white hover:bg-stone-800 hover:border-stone-600 transition-all"
-                          variant="outline"
-                        >
-                          Get Started Free
-                        </Button>
-                      </Link>
-                    ) : (
-                      <Link href="/register" className="block">
-                        <Button 
-                          className={`w-full py-6 text-base font-semibold transition-all ${
-                            isPopular 
-                              ? 'bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-stone-950 shadow-lg shadow-amber-500/25' 
-                              : 'bg-stone-800 hover:bg-stone-700 text-white'
-                          }`}
-                        >
-                          Start 14-Day Free Trial
-                        </Button>
-                      </Link>
-                    )}
+                    <Link href="/#early-access" className="block">
+                      <Button 
+                        className={`w-full py-6 text-base font-semibold transition-all ${
+                          isPopular 
+                            ? 'bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-stone-950 shadow-lg shadow-amber-500/25' 
+                            : 'border-2 border-stone-700 bg-transparent text-white hover:bg-stone-800 hover:border-stone-600'
+                        }`}
+                        variant={isPopular ? undefined : 'outline'}
+                      >
+                        Join Early Access
+                      </Button>
+                    </Link>
                     
                     {!isFree && (
                       <p className="text-xs text-center text-stone-500 mt-4">
-                        No credit card required • Cancel anytime
+                        Credit card required • Cancel anytime
                       </p>
                     )}
                   </div>
@@ -136,17 +126,6 @@ export function PricingSection() {
           })}
         </div>
 
-        {/* Money-back guarantee */}
-        <div className="mt-16 text-center">
-          <div className="inline-flex items-center gap-3 px-6 py-3 rounded-full bg-stone-800/50 border border-stone-700">
-            <div className="w-8 h-8 rounded-full bg-emerald-500/20 flex items-center justify-center">
-              <Check className="w-4 h-4 text-emerald-400" />
-            </div>
-            <p className="text-sm text-stone-300">
-              <span className="font-semibold text-white">30-day money-back guarantee</span> on all paid plans
-            </p>
-          </div>
-        </div>
       </div>
     </section>
   )

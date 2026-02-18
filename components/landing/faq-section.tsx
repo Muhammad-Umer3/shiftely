@@ -27,8 +27,8 @@ const faqs = [
     answer: 'Yes! Paid plans include CSV export functionality for payroll integration and reporting purposes. You can export schedules, hours worked, and employee data in various formats compatible with major payroll systems.',
   },
   {
-    question: 'Is there a free trial?',
-    answer: 'Absolutely! All paid plans come with a 14-day free trial with full access to all features. No credit card is required to start your trial. If you decide not to continue, your account will simply convert to our Free plan.',
+    question: 'How do I get early access?',
+    answer: 'Join our waitlist and tell us about your scheduling challenges. We\'ll reach out when we\'re ready for you.',
   },
 ]
 
@@ -99,7 +99,7 @@ export function FAQSection() {
           {/* Contact CTA */}
           <div className="mt-12 text-center">
             <p className="text-stone-400 mb-4">Still have questions?</p>
-            <Link href="/help/contact">
+            <Link href="/contact">
               <Button variant="outline" className="border-stone-700 text-stone-300 hover:border-amber-500/50 hover:text-amber-400 hover:bg-amber-500/5">
                 <MessageCircle className="w-4 h-4 mr-2" />
                 Contact Support
