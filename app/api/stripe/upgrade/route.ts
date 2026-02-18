@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAuth } from '@/lib/utils/auth'
-import { stripe, SUBSCRIPTION_TIERS, getLineItemForTier } from '@/lib/stripe'
+import { stripe, SUBSCRIPTION_TIERS, STRIPE_PRICE_IDS, getLineItemForTier } from '@/lib/stripe'
 import { prisma } from '@/lib/db/prisma'
 import { handleApiError } from '@/lib/middleware/error-handler'
 import { z } from 'zod'
@@ -35,10 +35,18 @@ export async function POST(req: NextRequest) {
 
     // If there's an existing subscription, update it instead of creating a new checkout
     if (organization.stripeSubscriptionId) {
-      const tierInfo = SUBSCRIPTION_TIERS[tier]
+      const priceId = STRIPE_PRICE_IDS[tier]
       const subscription = await stripe.subscriptions.retrieve(
         organization.stripeSubscriptionId
       )
+
+      // Price ID is required for subscription updates (use price_data fallback not supported for updates)
+      if (!priceId) {
+        return NextResponse.json(
+          { message: 'Price ID not configured for this tier. Please set STRIPE_PRICE_ID_GROWTH and STRIPE_PRICE_ID_PRO in your environment.' },
+          { status: 400 }
+        )
+      }
 
       // Prepare update data
       const updateData: Stripe.SubscriptionUpdateParams = {
@@ -47,24 +55,18 @@ export async function POST(req: NextRequest) {
           tier,
         },
         proration_behavior: 'always_invoice', // Prorate the difference
+        items: [
+          {
+            id: subscription.items.data[0].id,
+            price: priceId,
+          },
+        ],
       }
 
-      // Price ID is required for subscription updates
-      if (!tierInfo.priceId) {
-        return NextResponse.json(
-          { message: 'Price ID not configured for this tier. Please configure Stripe price IDs.' },
-          { status: 400 }
-        )
-      }
-
-      updateData.items = [
-        {
-          id: subscription.items.data[0].id,
-          price: tierInfo.priceId,
-        },
-      ]
-
-      await stripe.subscriptions.update(organization.stripeSubscriptionId, updateData)
+      await stripe.subscriptions.update(
+        organization.stripeSubscriptionId,
+        updateData
+      )
 
       return NextResponse.json(
         { message: 'Subscription upgraded successfully' },
