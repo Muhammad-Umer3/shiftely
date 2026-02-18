@@ -1,0 +1,65 @@
+import { NextRequest, NextResponse } from 'next/server'
+import { requireAuth } from '@/lib/utils/auth'
+import { prisma } from '@/lib/db/prisma'
+import bcrypt from 'bcryptjs'
+import { SubscriptionService } from '@/server/services/subscription/subscription.service'
+
+export async function POST(req: NextRequest) {
+  try {
+    const user = await requireAuth()
+
+    // Check subscription limits
+    const limitCheck = await SubscriptionService.canAddEmployee(user.organizationId)
+    if (!limitCheck.allowed) {
+      return NextResponse.json(
+        {
+          message: limitCheck.reason,
+          upgradeRequired: limitCheck.upgradeRequired,
+        },
+        { status: 403 }
+      )
+    }
+
+    const body = await req.json()
+    const { name, email, phone, password, roleType, hourlyRate } = body
+
+    // Check if user already exists
+    const existingUser = await prisma.user.findUnique({
+      where: { email },
+    })
+
+    if (existingUser) {
+      return NextResponse.json({ message: 'User with this email already exists' }, { status: 400 })
+    }
+
+    // Hash password
+    const passwordHash = await bcrypt.hash(password, 10)
+
+    // Create user and employee
+    const newUser = await prisma.user.create({
+      data: {
+        email,
+        name,
+        phone,
+        passwordHash,
+        role: 'EMPLOYEE',
+        organizationId: user.organizationId,
+        employee: {
+          create: {
+            organizationId: user.organizationId,
+            roleType: roleType || null,
+            hourlyRate: hourlyRate ? parseFloat(hourlyRate) : null,
+          },
+        },
+      },
+      include: {
+        employee: true,
+      },
+    })
+
+    return NextResponse.json({ employee: newUser.employee }, { status: 201 })
+  } catch (error) {
+    console.error('Error creating employee:', error)
+    return NextResponse.json({ message: 'Internal server error' }, { status: 500 })
+  }
+}
