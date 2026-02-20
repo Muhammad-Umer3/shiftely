@@ -10,6 +10,7 @@ export const SUBSCRIPTION_TIERS = {
       'Basic notifications',
       'Up to 5 employees',
       '1 active schedule',
+      'AI schedule generation',
     ],
   },
   GROWTH: {
@@ -21,10 +22,7 @@ export const SUBSCRIPTION_TIERS = {
       'All Free features',
       'Up to 15 employees',
       'Unlimited schedules',
-      'AI schedule suggestions',
       'Shift swap requests',
-      'Overtime alerts',
-      'Basic analytics',
     ],
   },
   PRO: {
@@ -35,9 +33,6 @@ export const SUBSCRIPTION_TIERS = {
     features: [
       'All Growth features',
       'Up to 100 employees',
-      'Advanced AI recommendations',
-      'CSV payroll export',
-      'Advanced analytics',
       'Custom roles & permissions',
       'Priority support',
     ],

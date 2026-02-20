@@ -47,8 +47,8 @@ export async function POST(req: NextRequest) {
       customer: customerId,
       payment_method_types: ['card'],
       line_items: [getLineItemForTier(tier as keyof typeof SUBSCRIPTION_TIERS)],
-      success_url: `${process.env.NEXTAUTH_URL}/dashboard/settings?success=true`,
-      cancel_url: `${process.env.NEXTAUTH_URL}/dashboard/settings?canceled=true`,
+      success_url: `${process.env.NEXTAUTH_URL}/settings?success=true`,
+      cancel_url: `${process.env.NEXTAUTH_URL}/settings?canceled=true`,
       client_reference_id: user.organizationId,
       metadata: {
         organizationId: user.organizationId,

@@ -9,17 +9,18 @@ type DisplaySettings = {
   startHour: number
   endHour: number
   workingDays: number[]
+  displayGroupIds?: string[]
 }
 
 export function EditScheduleButton({
   scheduleId,
   name,
-  assignedEmployeeIds,
+  displayGroupIds,
   displaySettings,
 }: {
   scheduleId: string
   name: string | null
-  assignedEmployeeIds: string[]
+  displayGroupIds: string[]
   displaySettings?: DisplaySettings | null
 }) {
   const [open, setOpen] = useState(false)
@@ -40,7 +41,7 @@ export function EditScheduleButton({
         onOpenChange={setOpen}
         scheduleId={scheduleId}
         initialName={name}
-        initialAssignedIds={assignedEmployeeIds}
+        initialDisplayGroupIds={displayGroupIds}
         initialDisplaySettings={displaySettings}
       />
     </>

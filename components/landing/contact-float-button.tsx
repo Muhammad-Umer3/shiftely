@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { MessageCircle } from 'lucide-react'
 
-const HIDE_PATHS = ['/contact', '/dashboard', '/schedule', '/employees', '/compliance', '/analytics', '/swaps', '/settings', '/onboarding', '/help']
+const HIDE_PATHS = ['/contact', '/schedules', '/schedule', '/employees', '/swaps', '/time-off', '/settings', '/onboarding', '/help']
 
 export function ContactFloatButton() {
   const pathname = usePathname()

@@ -8,7 +8,7 @@ const testimonials = [
     name: 'Sarah Johnson',
     role: 'Restaurant Manager',
     company: 'Cafe Delight',
-    content: 'Shiftely has completely transformed how we manage our staff schedules. The AI suggestions save us 12+ hours every week, and we\'ve eliminated scheduling conflicts entirely.',
+    content: 'We used to waste hours every week on spreadsheets and last-minute changes. Shiftely has completely transformed how we manage our staff schedules—the AI saves us 12+ hours every week, and we\'ve eliminated scheduling conflicts entirely.',
     rating: 5,
     metric: '12 hours saved/week',
     avatar: 'SJ',
@@ -17,7 +17,7 @@ const testimonials = [
     name: 'Mike Chen',
     role: 'Operations Director',
     company: 'Retail Plus',
-    content: 'The best scheduling tool we\'ve used. It\'s intuitive, powerful, and our employees love the mobile notifications. Setup took less than 10 minutes.',
+    content: 'We had constant no-shows and swap requests lost in texts. The best scheduling tool we\'ve used—intuitive, powerful, and our employees love the mobile notifications. Setup took less than 10 minutes.',
     rating: 5,
     metric: '10 min setup',
     avatar: 'MC',
@@ -26,7 +26,7 @@ const testimonials = [
     name: 'Emily Rodriguez',
     role: 'HR Manager',
     company: 'Service Co',
-    content: 'Finally, a scheduling solution that actually understands our needs. The shift swap feature is a game-changer, and compliance tracking gives us peace of mind.',
+    content: 'We were drowning in spreadsheets and back-and-forth. Finally, a scheduling solution that actually understands our needs. The AI generates schedules in seconds, and the shift swap feature is a game-changer.',
     rating: 5,
     metric: 'Zero conflicts',
     avatar: 'ER',
@@ -126,8 +126,7 @@ export function TestimonialsSection() {
               ))}
             </div>
             <div className="h-6 w-px bg-stone-700" />
-            <span className="text-xl font-bold text-white">4.8/5</span>
-            <span className="text-stone-500">from 200+ reviews</span>
+            <span className="text-xl font-bold text-white">Loved by teams</span>
           </div>
         </div>
 

@@ -35,14 +35,6 @@ export const PERMISSIONS = {
   SWAP_APPROVE: 'swap:approve',
   SWAP_REJECT: 'swap:reject',
 
-  // Compliance permissions
-  COMPLIANCE_VIEW: 'compliance:view',
-  COMPLIANCE_EXPORT: 'compliance:export',
-  COMPLIANCE_MANAGE: 'compliance:manage',
-
-  // Analytics permissions
-  ANALYTICS_VIEW: 'analytics:view',
-
   // Settings permissions
   SETTINGS_VIEW: 'settings:view',
   SETTINGS_EDIT: 'settings:edit',
@@ -79,12 +71,6 @@ export const PERMISSION_DESCRIPTIONS: Record<string, string> = {
   [PERMISSIONS.SWAP_REQUEST]: 'Request shift swaps',
   [PERMISSIONS.SWAP_APPROVE]: 'Approve swap requests',
   [PERMISSIONS.SWAP_REJECT]: 'Reject swap requests',
-
-  [PERMISSIONS.COMPLIANCE_VIEW]: 'View compliance data',
-  [PERMISSIONS.COMPLIANCE_EXPORT]: 'Export payroll/compliance data',
-  [PERMISSIONS.COMPLIANCE_MANAGE]: 'Manage compliance settings',
-
-  [PERMISSIONS.ANALYTICS_VIEW]: 'View analytics dashboard',
 
   [PERMISSIONS.SETTINGS_VIEW]: 'View organization settings',
   [PERMISSIONS.SETTINGS_EDIT]: 'Edit organization settings',
@@ -127,12 +113,6 @@ export const PERMISSIONS_BY_RESOURCE: Record<string, Permission[]> = {
     PERMISSIONS.SWAP_APPROVE,
     PERMISSIONS.SWAP_REJECT,
   ],
-  compliance: [
-    PERMISSIONS.COMPLIANCE_VIEW,
-    PERMISSIONS.COMPLIANCE_EXPORT,
-    PERMISSIONS.COMPLIANCE_MANAGE,
-  ],
-  analytics: [PERMISSIONS.ANALYTICS_VIEW],
   settings: [
     PERMISSIONS.SETTINGS_VIEW,
     PERMISSIONS.SETTINGS_EDIT,
@@ -171,11 +151,6 @@ export const DEFAULT_ROLE_PERMISSIONS = {
     PERMISSIONS.SWAP_REQUEST,
     PERMISSIONS.SWAP_APPROVE,
     PERMISSIONS.SWAP_REJECT,
-    // Compliance
-    PERMISSIONS.COMPLIANCE_VIEW,
-    PERMISSIONS.COMPLIANCE_EXPORT,
-    // Analytics
-    PERMISSIONS.ANALYTICS_VIEW,
     // Settings (view only, no role/subscription management)
     PERMISSIONS.SETTINGS_VIEW,
     PERMISSIONS.SETTINGS_EDIT,
@@ -191,7 +166,5 @@ export const DEFAULT_ROLE_PERMISSIONS = {
     // Swap requests
     PERMISSIONS.SWAP_VIEW,
     PERMISSIONS.SWAP_REQUEST,
-    // Own compliance
-    PERMISSIONS.COMPLIANCE_VIEW,
   ],
 } as const

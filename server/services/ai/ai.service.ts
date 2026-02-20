@@ -21,16 +21,25 @@ export class AIService {
       throw new Error('Gemini API key not configured')
     }
 
-    // Get employees and their availability
+    const weekEndDate = new Date(weekStartDate)
+    weekEndDate.setDate(weekEndDate.getDate() + 6)
+
+    // Get employees, availability, and leaves
     const employees = await prisma.employee.findMany({
       where: { organizationId },
       include: {
         user: true,
-        shifts: {
+        slotAssignments: {
           where: {
-            startTime: {
-              gte: weekStartDate,
+            slot: {
+              startTime: { gte: weekStartDate },
             },
+          },
+        },
+        leaves: {
+          where: {
+            startDate: { lte: weekEndDate },
+            endDate: { gte: weekStartDate },
           },
         },
       },
@@ -70,6 +79,88 @@ export class AIService {
   }
 
   /**
+   * Generate schedule suggestions from user prompt for an existing schedule
+   */
+  static async generateScheduleSuggestionsFromPrompt(
+    organizationId: string,
+    weekStartDate: Date,
+    userPrompt: string,
+    existingSchedule: any,
+    constraints?: {
+      minEmployeesPerShift?: number
+      maxHoursPerEmployee?: number
+      preferredShifts?: string[]
+    }
+  ) {
+    if (!process.env.GEMINI_API_KEY) {
+      throw new Error('Gemini API key not configured')
+    }
+
+    const weekEndDate = new Date(weekStartDate)
+    weekEndDate.setDate(weekEndDate.getDate() + 6)
+
+    const employees = await prisma.employee.findMany({
+      where: { organizationId },
+      include: {
+        user: true,
+        slotAssignments: {
+          where: { slot: { startTime: { gte: weekStartDate } } },
+        },
+        leaves: {
+          where: {
+            startDate: { lte: weekEndDate },
+            endDate: { gte: weekStartDate },
+          },
+        },
+      },
+    })
+
+    const assignedIds = new Set<string>()
+    existingSchedule?.slots?.forEach((slot: any) => {
+      slot.assignments?.forEach((a: any) => {
+        if (a.employeeId) assignedIds.add(a.employeeId)
+      })
+    })
+    const filteredEmployees =
+      assignedIds.size > 0
+        ? employees.filter((e) => assignedIds.has(e.id))
+        : employees
+
+    const basePrompt = this.buildSchedulePrompt(
+      filteredEmployees,
+      weekStartDate,
+      constraints,
+      existingSchedule
+    )
+    const fullUserPrompt = userPrompt.trim()
+      ? `${userPrompt}\n\n${basePrompt}`
+      : basePrompt
+
+    try {
+      const model = genAI.getGenerativeModel({
+        model: 'gemini-1.5-pro',
+        generationConfig: {
+          temperature: 0.7,
+          responseMimeType: 'application/json',
+        },
+      })
+
+      const systemInstruction =
+        'You are an expert shift scheduler. The user may provide specific instructions or constraints. Analyze employee availability and the existing schedule to suggest shifts. Return JSON with suggestions array and summary.'
+      const prompt = `${systemInstruction}\n\n${fullUserPrompt}`
+
+      const result = await model.generateContent(prompt)
+      const responseText = result.response.text()
+      const response = JSON.parse(responseText || '{}')
+
+      return this.parseAISuggestions(response, filteredEmployees)
+    } catch (error) {
+      console.error('AI suggest from prompt error:', error)
+      throw new Error('Failed to generate suggestions')
+    }
+  }
+
+  /**
    * Recommend employee for an open shift
    */
   static async recommendEmployeeForShift(
@@ -87,10 +178,12 @@ export class AIService {
       where: { organizationId },
       include: {
         user: true,
-        shifts: {
+        slotAssignments: {
           where: {
-            startTime: {
-              gte: new Date(shiftStartTime.getTime() - 7 * 24 * 60 * 60 * 1000), // Last 7 days
+            slot: {
+              startTime: {
+                gte: new Date(shiftStartTime.getTime() - 7 * 24 * 60 * 60 * 1000),
+              },
             },
           },
         },
@@ -106,7 +199,7 @@ Employees:
 ${employees
   .map(
     (emp) =>
-      `- ${emp.user.name || emp.user.email} (Role: ${emp.roleType || 'N/A'}, Recent shifts: ${emp.shifts.length})`
+      `- ${emp.user.name || emp.user.email} (Role: ${emp.roleType || 'N/A'}, Recent shifts: ${emp.slotAssignments.length})`
   )
   .join('\n')}
 
@@ -154,18 +247,19 @@ Return JSON: { "recommendedEmployeeId": "id", "reason": "explanation" }`
       },
       include: {
         user: true,
-        shifts: {
+        slotAssignments: {
           where: {
-            startTime: {
-              gte: new Date(shiftStartTime.getTime() - 7 * 24 * 60 * 60 * 1000),
+            slot: {
+              startTime: {
+                gte: new Date(shiftStartTime.getTime() - 7 * 24 * 60 * 60 * 1000),
+              },
             },
           },
         },
       },
     })
 
-    // Find employee with least shifts
-    const sorted = employees.sort((a, b) => a.shifts.length - b.shifts.length)
+    const sorted = employees.sort((a, b) => a.slotAssignments.length - b.slotAssignments.length)
     return {
       employeeId: sorted[0]?.id || null,
       reason: 'Least scheduled this week',
@@ -185,16 +279,21 @@ Return JSON: { "recommendedEmployeeId": "id", "reason": "explanation" }`
 
 Employees:
 ${employees
-  .map(
-    (emp) =>
-      `- ${emp.user.name || emp.user.email} (ID: ${emp.id}, Role: ${emp.roleType || 'Any'}, Availability: ${JSON.stringify(emp.availabilityTemplate || {})})`
-  )
+  .map((emp) => {
+    const leavesStr =
+      emp.leaves?.length > 0
+        ? ` UNAVAILABLE (on leave): ${emp.leaves.map((l: { startDate: Date; endDate: Date; type: string }) => `${l.startDate.toISOString().slice(0, 10)} to ${l.endDate.toISOString().slice(0, 10)} (${l.type})`).join('; ')}`
+        : ''
+    return `- ${emp.user.name || emp.user.email} (ID: ${emp.id}, Role: ${emp.roleType || 'Any'}, Availability: ${JSON.stringify(emp.availabilityTemplate || {})}${leavesStr})`
+  })
   .join('\n')}
+
+IMPORTANT: Do NOT assign shifts to employees who are on leave during that period.
 
 Constraints:
 - Minimum employees per shift: ${constraints?.minEmployeesPerShift || 2}
 - Maximum hours per employee: ${constraints?.maxHoursPerEmployee || 40}
-${existingSchedule ? `- Existing shifts: ${existingSchedule.scheduleShifts.length}` : ''}
+${existingSchedule ? `- Existing slots: ${existingSchedule.slots?.length ?? 0}` : ''}
 
 Return JSON with suggested shifts:
 {

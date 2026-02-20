@@ -7,7 +7,7 @@ import { cn } from '@/lib/utils/cn'
 
 type ViewMode = 'grid' | 'roster' | 'month'
 
-export function ScheduleViewToggle({ view, basePath = '/dashboard/schedule', showMonthView = true }: { view: ViewMode; basePath?: string; showMonthView?: boolean }) {
+export function ScheduleViewToggle({ view, basePath = '/schedule', showMonthView = true }: { view: ViewMode; basePath?: string; showMonthView?: boolean }) {
   const router = useRouter()
   const searchParams = useSearchParams()
 

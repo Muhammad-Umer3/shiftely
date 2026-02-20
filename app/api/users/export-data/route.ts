@@ -27,16 +27,16 @@ export async function GET(req: NextRequest) {
             role: true,
           },
         },
-        createdShifts: true,
+        createdSlots: true,
         createdSchedules: true,
         swapRequests: {
           include: {
-            shift: true,
+            slot: true,
           },
         },
         swapTargets: {
           include: {
-            shift: true,
+            slot: true,
           },
         },
       },
@@ -71,7 +71,7 @@ export async function GET(req: NextRequest) {
         role: ur.role.name,
         assignedAt: ur.assignedAt,
       })),
-      shifts: userData.createdShifts,
+      slots: userData.createdSlots,
       schedules: userData.createdSchedules,
       swapRequests: userData.swapRequests,
       swapTargets: userData.swapTargets,

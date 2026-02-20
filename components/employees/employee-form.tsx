@@ -42,7 +42,7 @@ export function EmployeeForm() {
       })
 
       if (response.ok) {
-        router.push('/dashboard/employees')
+        router.push('/employees')
         router.refresh()
       } else {
         const error = await response.json()

@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { format, addDays, startOfWeek } from 'date-fns'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Calendar, ChevronRight, Users, Clock, Settings2 } from 'lucide-react'
+import { Calendar, ChevronRight, Users, Settings2 } from 'lucide-react'
 import { cn } from '@/lib/utils/cn'
 import { EditScheduleDialog } from '@/components/schedule/edit-schedule-dialog'
 import { CreateScheduleDialog } from '@/components/schedule/create-schedule-dialog'
@@ -20,6 +20,7 @@ type DisplaySettings = {
   startHour: number
   endHour: number
   workingDays: number[]
+  displayGroupIds?: string[]
 }
 
 type ScheduleWithShifts = {
@@ -69,11 +70,11 @@ export function SchedulesList({
             <EmptyState
               icon={<Calendar className="h-12 w-12 text-amber-500/60" />}
               title="No schedules yet"
-              description="Create your first schedule to start assigning shifts to your team."
+              description="Create your first schedule. Add employees and set their availability, then use the AI Assistant on the calendar to generate shifts."
               action={
                 canCreate
                   ? {
-                      label: 'Create Schedule',
+                      label: 'Create schedule',
                       onClick: () => setCreateOpen(true),
                     }
                   : undefined
@@ -88,8 +89,9 @@ export function SchedulesList({
             <CardTitle className="text-base text-stone-900">All schedules</CardTitle>
             {canCreate && (
               <Button
+                variant="outline"
                 onClick={() => setCreateOpen(true)}
-                className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-stone-950 font-semibold"
+                className="border-stone-200 text-stone-700 hover:bg-stone-50"
               >
                 Create schedule
               </Button>
@@ -114,15 +116,9 @@ export function SchedulesList({
                     const end = addDays(start, 6)
                     const weekRange = `${format(start, 'MMM d')} – ${format(end, 'MMM d')}, ${format(start, 'yyyy')}`
                     const displayName = s.name?.trim() || weekRange
-                    const assignedIds = s.assignedEmployeeIds ?? []
-                    const assignedEmployees =
-                      assignedIds.length > 0
-                        ? employees.filter((e) => assignedIds.includes(e.id))
-                        : employees
-                    const employeeNames = assignedEmployees
-                      .map((e) => e.user.name || e.user.email)
-                      .slice(0, 3)
-                    const moreCount = assignedEmployees.length > 3 ? assignedEmployees.length - 3 : 0
+                    const ds = s.displaySettings as { displayGroupIds?: string[] } | null
+                    const displayGroupIds = ds?.displayGroupIds ?? []
+                    const groupsLabel = displayGroupIds.length > 0 ? `${displayGroupIds.length} group${displayGroupIds.length !== 1 ? 's' : ''}` : 'All groups'
 
                     return (
                       <tr
@@ -131,7 +127,7 @@ export function SchedulesList({
                       >
                         <td className="py-3 px-4">
                           <Link
-                            href={`/dashboard/schedules/${s.id}`}
+                            href={`/schedules/${s.id}`}
                             className="font-medium text-stone-900 hover:text-amber-600 truncate block max-w-[180px]"
                           >
                             {displayName}
@@ -166,14 +162,7 @@ export function SchedulesList({
                         <td className="py-3 px-4">
                           <div className="flex items-center gap-1 text-sm text-stone-600">
                             <Users className="h-3.5 w-3 shrink-0" />
-                            {assignedEmployees.length === 0 ? (
-                              <span>All ({employees.length})</span>
-                            ) : (
-                              <span className="truncate max-w-[200px]">
-                                {employeeNames.join(', ')}
-                                {moreCount > 0 && ` +${moreCount}`}
-                              </span>
-                            )}
+                            <span>{groupsLabel}</span>
                           </div>
                         </td>
                         <td className="py-3 px-4 text-right">
@@ -188,7 +177,7 @@ export function SchedulesList({
                                 Edit schedule
                               </Button>
                             )}
-                            <Link href={`/dashboard/schedules/${s.id}`}>
+                            <Link href={`/schedules/${s.id}`}>
                               <Button
                                 variant="ghost"
                                 size="sm"
@@ -216,7 +205,7 @@ export function SchedulesList({
           onOpenChange={(open) => !open && setEditSchedule(null)}
           scheduleId={editSchedule.id}
           initialName={editSchedule.name}
-          initialAssignedIds={editSchedule.assignedEmployeeIds ?? []}
+          initialDisplayGroupIds={(editSchedule.displaySettings as DisplaySettings | null)?.displayGroupIds ?? []}
           initialDisplaySettings={editSchedule.displaySettings as DisplaySettings | null}
           onSaved={() => setEditSchedule(null)}
         />
@@ -224,10 +213,10 @@ export function SchedulesList({
 
       {canCreate && (
         <CreateScheduleDialog
-          open={createOpen}
-          onOpenChange={setCreateOpen}
-          defaultWeekStart={format(startOfWeek(new Date(), { weekStartsOn: 1 }), 'yyyy-MM-dd')}
-        />
+            open={createOpen}
+            onOpenChange={setCreateOpen}
+            defaultWeekStart={format(startOfWeek(new Date(), { weekStartsOn: 1 }), 'yyyy-MM-dd')}
+          />
       )}
     </>
   )

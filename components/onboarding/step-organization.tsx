@@ -57,7 +57,7 @@ export function StepOrganization({ onComplete }: { onComplete: () => void }) {
     <div className="space-y-4">
       <h3 className="text-lg font-semibold">Organization Setup</h3>
       <p className="text-sm text-muted-foreground">
-        Let's start by setting up your organization details.
+        Name your business or team. This helps keep things organized.
       </p>
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         <div className="space-y-2">

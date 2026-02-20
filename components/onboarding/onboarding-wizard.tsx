@@ -12,9 +12,9 @@ import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
 
 const STEPS = [
-  { id: 1, title: 'Organization Setup' },
+  { id: 1, title: 'Organization' },
   { id: 2, title: 'Add Employees' },
-  { id: 3, title: 'Create Schedule' },
+  { id: 3, title: 'Generate Schedule' },
   { id: 4, title: 'Invite Team' },
 ]
 
@@ -48,7 +48,7 @@ export function OnboardingWizard() {
 
       if (response.ok) {
         toast.success('Onboarding completed!')
-        router.push('/dashboard')
+        router.push('/schedules')
       } else {
         toast.error('Failed to complete onboarding')
       }
@@ -65,7 +65,7 @@ export function OnboardingWizard() {
         <CardHeader>
           <CardTitle className="text-2xl">Welcome to Shiftely!</CardTitle>
           <CardDescription>
-            Let's get you set up in just a few steps
+            Add your team, set availability, and let AI generate your first schedule
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">

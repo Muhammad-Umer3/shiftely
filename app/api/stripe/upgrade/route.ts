@@ -80,8 +80,8 @@ export async function POST(req: NextRequest) {
       customer: organization.stripeCustomerId,
       payment_method_types: ['card'],
       line_items: [getLineItemForTier(tier)],
-      success_url: `${process.env.NEXTAUTH_URL}/dashboard/settings/subscription?success=true`,
-      cancel_url: `${process.env.NEXTAUTH_URL}/dashboard/settings/subscription?canceled=true`,
+      success_url: `${process.env.NEXTAUTH_URL}/settings?success=true`,
+      cancel_url: `${process.env.NEXTAUTH_URL}/settings?canceled=true`,
       client_reference_id: user.organizationId,
       metadata: {
         organizationId: user.organizationId,

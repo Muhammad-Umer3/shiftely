@@ -12,7 +12,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { toast } from 'sonner'
-import { Users, Search } from 'lucide-react'
+import { UsersRound, Search } from 'lucide-react'
 import { cn } from '@/lib/utils/cn'
 
 const DAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
@@ -22,15 +22,13 @@ type DisplaySettings = {
   startHour: number
   endHour: number
   workingDays: number[]
+  displayGroupIds?: string[]
 }
 
-type Employee = {
+type Group = {
   id: string
-  user: {
-    name: string | null
-    email: string
-    phone: string | null
-  }
+  name: string
+  members: { employee: { id: string } }[]
 }
 
 export function EditScheduleDialog({
@@ -38,7 +36,7 @@ export function EditScheduleDialog({
   onOpenChange,
   scheduleId,
   initialName,
-  initialAssignedIds,
+  initialDisplayGroupIds,
   initialDisplaySettings,
   onSaved,
 }: {
@@ -46,57 +44,53 @@ export function EditScheduleDialog({
   onOpenChange: (open: boolean) => void
   scheduleId: string
   initialName: string | null
-  initialAssignedIds: string[]
+  initialDisplayGroupIds: string[]
   initialDisplaySettings?: DisplaySettings | null
   onSaved?: () => void
 }) {
   const router = useRouter()
   const defaults = initialDisplaySettings ?? DEFAULT_DISPLAY
   const [name, setName] = useState(initialName ?? '')
-  const [assignSpecific, setAssignSpecific] = useState(initialAssignedIds.length > 0)
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set(initialAssignedIds))
+  const [includeSpecific, setIncludeSpecific] = useState(initialDisplayGroupIds.length > 0)
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set(initialDisplayGroupIds))
   const [startHour, setStartHour] = useState(defaults.startHour)
   const [endHour, setEndHour] = useState(defaults.endHour)
   const [workingDays, setWorkingDays] = useState<number[]>(defaults.workingDays)
-  const [employees, setEmployees] = useState<Employee[]>([])
-  const [employeeSearch, setEmployeeSearch] = useState('')
+  const [groups, setGroups] = useState<Group[]>([])
+  const [groupSearch, setGroupSearch] = useState('')
   const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
 
-  const filteredEmployees = employees.filter((emp) => {
-    const q = employeeSearch.toLowerCase().trim()
+  const filteredGroups = groups.filter((g) => {
+    const q = groupSearch.toLowerCase().trim()
     if (!q) return true
-    const name = (emp.user.name || '').toLowerCase()
-    const email = (emp.user.email || '').toLowerCase()
-    const phone = (emp.user.phone || '').replace(/\D/g, '')
-    const qDigits = q.replace(/\D/g, '')
-    return name.includes(q) || email.includes(q) || (qDigits && phone.includes(qDigits))
+    return g.name.toLowerCase().includes(q)
   })
 
   useEffect(() => {
     setName(initialName ?? '')
-    setAssignSpecific(initialAssignedIds.length > 0)
-    setSelectedIds(new Set(initialAssignedIds))
+    setIncludeSpecific(initialDisplayGroupIds.length > 0)
+    setSelectedIds(new Set(initialDisplayGroupIds))
     const d = initialDisplaySettings ?? DEFAULT_DISPLAY
     setStartHour(d.startHour)
     setEndHour(d.endHour)
     setWorkingDays(Array.isArray(d.workingDays) ? d.workingDays : DEFAULT_DISPLAY.workingDays)
-  }, [initialName, initialAssignedIds, initialDisplaySettings, open])
+  }, [initialName, initialDisplayGroupIds, initialDisplaySettings, open])
 
   useEffect(() => {
     if (open) {
       setLoading(true)
-      fetch('/api/employees')
+      fetch('/api/groups')
         .then((r) => r.json())
         .then((d) => {
-          setEmployees(d.employees ?? [])
+          setGroups(d.groups ?? [])
         })
-        .catch(() => setEmployees([]))
+        .catch(() => setGroups([]))
         .finally(() => setLoading(false))
     }
   }, [open])
 
-  const handleToggleEmployee = (id: string) => {
+  const handleToggleGroup = (id: string) => {
     setSelectedIds((prev) => {
       const next = new Set(prev)
       if (next.has(id)) next.delete(id)
@@ -106,18 +100,18 @@ export function EditScheduleDialog({
   }
 
   const handleSelectAll = () => {
-    const target = filteredEmployees
-    const allSelected = target.length > 0 && target.every((e) => selectedIds.has(e.id))
+    const target = filteredGroups
+    const allSelected = target.length > 0 && target.every((g) => selectedIds.has(g.id))
     if (allSelected) {
       setSelectedIds((prev) => {
         const next = new Set(prev)
-        target.forEach((e) => next.delete(e.id))
+        target.forEach((g) => next.delete(g.id))
         return next
       })
     } else {
       setSelectedIds((prev) => {
         const next = new Set(prev)
-        target.forEach((e) => next.add(e.id))
+        target.forEach((g) => next.add(g.id))
         return next
       })
     }
@@ -141,8 +135,12 @@ export function EditScheduleDialog({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           name: name.trim() || null,
-          assignedEmployeeIds: assignSpecific ? Array.from(selectedIds) : [],
-          displaySettings: { startHour, endHour, workingDays },
+          displaySettings: {
+            startHour,
+            endHour,
+            workingDays,
+            displayGroupIds: includeSpecific ? Array.from(selectedIds) : [],
+          },
         }),
       })
 
@@ -185,37 +183,37 @@ export function EditScheduleDialog({
             <label className="flex items-center gap-2 text-sm font-medium text-stone-700 cursor-pointer">
               <input
                 type="checkbox"
-                checked={assignSpecific}
-                onChange={(e) => setAssignSpecific(e.target.checked)}
+                checked={includeSpecific}
+                onChange={(e) => setIncludeSpecific(e.target.checked)}
                 className="rounded border-stone-300 text-amber-600 focus:ring-amber-500"
               />
-              Assign specific teammates
+              Include specific groups for display
             </label>
             <p className="text-xs text-stone-500 mt-1">
-              {assignSpecific
-                ? 'Only selected teammates will appear in this schedule'
-                : 'All teammates will appear in this schedule'}
+              {includeSpecific
+                ? 'Only selected groups will appear in the calendar sidebar. Drag groups onto slots to assign shifts.'
+                : 'All groups will appear in the calendar sidebar.'}
             </p>
 
-            {assignSpecific && (
+            {includeSpecific && (
               <div className="mt-3 border border-stone-200 rounded-lg p-3 space-y-2">
                 <div className="relative">
                   <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-stone-400" />
                   <input
                     type="text"
-                    placeholder="Search by name or phone..."
-                    value={employeeSearch}
-                    onChange={(e) => setEmployeeSearch(e.target.value)}
+                    placeholder="Search groups..."
+                    value={groupSearch}
+                    onChange={(e) => setGroupSearch(e.target.value)}
                     className="w-full pl-8 pr-3 py-2 text-sm border border-stone-200 rounded-lg text-stone-900 bg-white focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
                   />
                 </div>
                 <div className="max-h-[180px] overflow-y-auto space-y-2">
                 {loading ? (
                   <p className="text-sm text-stone-500">Loading...</p>
-                ) : employees.length === 0 ? (
-                  <p className="text-sm text-stone-500">No employees yet</p>
-                ) : filteredEmployees.length === 0 ? (
-                  <p className="text-sm text-stone-500">No employees match your search</p>
+                ) : groups.length === 0 ? (
+                  <p className="text-sm text-stone-500">No groups yet. Create groups in Team.</p>
+                ) : filteredGroups.length === 0 ? (
+                  <p className="text-sm text-stone-500">No groups match your search</p>
                 ) : (
                   <>
                     <button
@@ -223,35 +221,33 @@ export function EditScheduleDialog({
                       onClick={handleSelectAll}
                       className="text-xs text-amber-600 hover:text-amber-700 font-medium"
                     >
-                      {filteredEmployees.length > 0 && filteredEmployees.every((e) => selectedIds.has(e.id))
+                      {filteredGroups.length > 0 && filteredGroups.every((g) => selectedIds.has(g.id))
                         ? 'Deselect all'
                         : 'Select all'}
                     </button>
                     <div className="space-y-1.5">
-                      {filteredEmployees.map((emp) => (
+                      {filteredGroups.map((group) => (
                         <label
-                          key={emp.id}
+                          key={group.id}
                           className={cn(
                             'flex items-center gap-2 py-1.5 px-2 rounded cursor-pointer hover:bg-stone-50',
-                            selectedIds.has(emp.id) && 'bg-amber-50'
+                            selectedIds.has(group.id) && 'bg-amber-50'
                           )}
                         >
                           <input
                             type="checkbox"
-                            checked={selectedIds.has(emp.id)}
-                            onChange={() => handleToggleEmployee(emp.id)}
+                            checked={selectedIds.has(group.id)}
+                            onChange={() => handleToggleGroup(group.id)}
                             className="rounded border-stone-300 text-amber-600 focus:ring-amber-500"
                           />
-                          <Users className="h-3.5 w-3 text-stone-400 shrink-0" />
+                          <UsersRound className="h-3.5 w-3 text-stone-400 shrink-0" />
                           <div className="min-w-0">
                             <span className="text-sm text-stone-900 truncate block">
-                              {emp.user.name || emp.user.email}
+                              {group.name}
                             </span>
-                            {emp.user.phone && (
-                              <span className="text-xs text-stone-500 truncate block">
-                                {emp.user.phone}
-                              </span>
-                            )}
+                            <span className="text-xs text-stone-500 truncate block">
+                              {group.members.length} member{group.members.length !== 1 ? 's' : ''}
+                            </span>
                           </div>
                         </label>
                       ))}
@@ -323,7 +319,7 @@ export function EditScheduleDialog({
           </Button>
           <Button
             onClick={handleSave}
-            disabled={saving || (assignSpecific && selectedIds.size === 0)}
+            disabled={saving || (includeSpecific && selectedIds.size === 0)}
             className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-stone-950 font-semibold"
           >
             {saving ? 'Saving...' : 'Save'}

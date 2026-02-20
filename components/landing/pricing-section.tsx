@@ -43,7 +43,7 @@ export function PricingSection() {
             <span className="block gradient-text">pricing for everyone</span>
           </h2>
           <p className="text-lg text-stone-400">
-            Simple pricing for small teams. Pricing details coming soon.
+            Start free, upgrade when you&apos;re ready. 7-day trial with credit card.
           </p>
         </div>
 
@@ -101,7 +101,7 @@ export function PricingSection() {
                       ))}
                     </ul>
                     
-                    <Link href="/#early-access" className="block">
+                    <Link href="/contact" className="block">
                       <Button 
                         className={`w-full py-6 text-base font-semibold transition-all ${
                           isPopular 
@@ -110,15 +110,13 @@ export function PricingSection() {
                         }`}
                         variant={isPopular ? undefined : 'outline'}
                       >
-                        Join Early Access
+                        {isFree ? 'Get notified' : 'Get notified'}
                       </Button>
                     </Link>
                     
-                    {!isFree && (
-                      <p className="text-xs text-center text-stone-500 mt-4">
-                        Credit card required • Cancel anytime
-                      </p>
-                    )}
+                    <p className="text-xs text-center text-stone-500 mt-4">
+                      We&apos;ll be in touch when we launch
+                    </p>
                   </div>
                 </div>
               </div>

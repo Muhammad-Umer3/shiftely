@@ -4,6 +4,7 @@ import bcrypt from 'bcryptjs'
 import { PermissionService } from '@/server/services/permissions/permission.service'
 import { handleApiError } from '@/lib/middleware/error-handler'
 import { sanitizeObject } from '@/lib/utils/validation'
+import { setOnboardingStep } from '@/lib/onboarding'
 import { z } from 'zod'
 
 const acceptSchema = z.object({
@@ -106,6 +107,8 @@ export async function POST(req: NextRequest) {
 
       return user
     })
+
+    await setOnboardingStep(invitation.organizationId, 2)
 
     return NextResponse.json(
       {

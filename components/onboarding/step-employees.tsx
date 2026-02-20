@@ -1,23 +1,27 @@
 'use client'
 
-import { useState } from 'react'
 import { Button } from '@/components/ui/button'
-import { toast } from 'sonner'
 import Link from 'next/link'
 
 export function StepEmployees({ onComplete }: { onComplete: () => void }) {
   return (
     <div className="space-y-4">
-      <h3 className="text-lg font-semibold">Invite Your First Team Members</h3>
+      <h3 className="text-lg font-semibold">Add Your Team</h3>
       <p className="text-sm text-muted-foreground">
-        Send invitations to join your organization. They&apos;ll create their account when they accept.
+        Add employees and set when they can work. AI will use this availability to generate schedules.
       </p>
-      <div className="flex gap-2">
-        <Link href="/dashboard/employees/invite">
-          <Button>Invite Member</Button>
+      <div className="flex flex-wrap gap-2">
+        <Link href="/employees/invite">
+          <Button>Add Employee</Button>
+        </Link>
+        <Link href="/employees">
+          <Button variant="outline">Set Availability</Button>
         </Link>
         <Button variant="outline" onClick={onComplete}>
-          I'll add employees later
+          I&apos;ve added employees
+        </Button>
+        <Button variant="ghost" onClick={onComplete}>
+          I&apos;ll add employees later
         </Button>
       </div>
     </div>

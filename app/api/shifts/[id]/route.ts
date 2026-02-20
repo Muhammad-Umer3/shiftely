@@ -10,25 +10,24 @@ export async function DELETE(
     const user = await requireAuth()
     const { id } = await params
 
-    // Verify shift belongs to organization
-    const shift = await prisma.shift.findFirst({
+    const slot = await prisma.slot.findFirst({
       where: {
         id,
         organizationId: user.organizationId,
       },
     })
 
-    if (!shift) {
-      return NextResponse.json({ message: 'Shift not found' }, { status: 404 })
+    if (!slot) {
+      return NextResponse.json({ message: 'Slot not found' }, { status: 404 })
     }
 
-    await prisma.shift.delete({
+    await prisma.slot.delete({
       where: { id },
     })
 
-    return NextResponse.json({ message: 'Shift deleted' }, { status: 200 })
+    return NextResponse.json({ message: 'Slot deleted' }, { status: 200 })
   } catch (error) {
-    console.error('Error deleting shift:', error)
+    console.error('Error deleting slot:', error)
     return NextResponse.json({ message: 'Internal server error' }, { status: 500 })
   }
 }

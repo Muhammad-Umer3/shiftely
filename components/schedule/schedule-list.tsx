@@ -60,7 +60,7 @@ export function ScheduleList({
   }, [])
 
   const viewSchedule = (weekStartDate: string) => {
-    router.push(`/dashboard/schedule?week=${format(new Date(weekStartDate), 'yyyy-MM-dd')}`)
+    router.push(`/schedule?week=${format(new Date(weekStartDate), 'yyyy-MM-dd')}`)
   }
 
   const handleCreateSchedule = () => {

@@ -3,6 +3,7 @@ import { requireAuth } from '@/lib/utils/auth'
 import { prisma } from '@/lib/db/prisma'
 import { SchedulerService } from '@/server/services/scheduler/scheduler.service'
 import { SubscriptionService } from '@/server/services/subscription/subscription.service'
+import { setOnboardingStep } from '@/lib/onboarding'
 import { startOfWeek } from 'date-fns'
 
 const DEFAULT_DISPLAY = { startHour: 6, endHour: 22, workingDays: [1, 2, 3, 4, 5] }
@@ -11,7 +12,7 @@ export async function POST(req: NextRequest) {
   try {
     const user = await requireAuth()
     const body = await req.json()
-    const { weekStartDate, autoFill, name, assignedEmployeeIds } = body
+    const { weekStartDate, autoFill, name } = body
 
     const weekStart = weekStartDate ? new Date(weekStartDate) : startOfWeek(new Date(), { weekStartsOn: 1 })
 
@@ -48,7 +49,6 @@ export async function POST(req: NextRequest) {
       user.id,
       {
         name: typeof name === 'string' ? name : undefined,
-        assignedEmployeeIds: Array.isArray(assignedEmployeeIds) ? assignedEmployeeIds : undefined,
         displaySettings,
       }
     )
@@ -58,9 +58,11 @@ export async function POST(req: NextRequest) {
         schedule.id,
         user.organizationId,
         weekStart,
-        schedule.assignedEmployeeIds.length > 0 ? schedule.assignedEmployeeIds : undefined
+        undefined
       )
     }
+
+    await setOnboardingStep(user.organizationId, 3)
 
     return NextResponse.json({ schedule }, { status: 201 })
   } catch (error) {
@@ -84,13 +86,25 @@ export async function GET(req: NextRequest) {
         const monthStart = new Date(y, m - 1, 1)
         const monthEnd = new Date(y, m, 0)
         schedules = schedules.filter((s) => {
-          const weekStart = new Date(s.weekStartDate)
+          const ws = s.weekStartDate
+          if (!ws) return false
+          const weekStart = new Date(ws)
           const weekEnd = new Date(weekStart)
           weekEnd.setDate(weekEnd.getDate() + 6)
           return weekStart <= monthEnd && weekEnd >= monthStart
         })
       }
-      return NextResponse.json({ schedules }, { status: 200 })
+      const withShifts = schedules.map((s) => ({
+        ...s,
+        scheduleShifts: s.slots.map((slot) => ({
+          shift: {
+            employeeId: slot.assignments[0]?.employeeId ?? null,
+            startTime: slot.startTime,
+            endTime: slot.endTime,
+          },
+        })),
+      }))
+      return NextResponse.json({ schedules: withShifts }, { status: 200 })
     }
 
     const weekStart = weekStartDate

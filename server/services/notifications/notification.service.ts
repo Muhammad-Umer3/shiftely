@@ -1,6 +1,7 @@
 import { Resend } from 'resend'
 import { prisma } from '@/lib/db/prisma'
 import { format } from 'date-fns'
+import { SmsService } from '../sms/sms.service'
 
 const resend = new Resend(process.env.RESEND_API_KEY)
 
@@ -57,9 +58,9 @@ export class NotificationService {
     const schedule = await prisma.schedule.findUnique({
       where: { id: scheduleId },
       include: {
-        scheduleShifts: {
+        slots: {
           include: {
-            shift: {
+            assignments: {
               include: {
                 employee: {
                   include: { user: true },
@@ -75,17 +76,19 @@ export class NotificationService {
 
     const affectedEmployees = new Map<string, any>()
 
-    schedule.scheduleShifts.forEach((ss) => {
-      if (ss.shift.employee) {
-        const emp = ss.shift.employee
-        if (!affectedEmployees.has(emp.userId)) {
-          affectedEmployees.set(emp.userId, {
-            user: emp.user,
-            shifts: [],
-          })
+    schedule.slots.forEach((slot) => {
+      slot.assignments.forEach((a) => {
+        if (a.employee) {
+          const emp = a.employee
+          if (!affectedEmployees.has(emp.userId)) {
+            affectedEmployees.set(emp.userId, {
+              user: emp.user,
+              shifts: [],
+            })
+          }
+          affectedEmployees.get(emp.userId).shifts.push({ ...slot, employee: emp })
         }
-        affectedEmployees.get(emp.userId).shifts.push(ss.shift)
-      }
+      })
     })
 
     // Send notifications to each affected employee
@@ -111,19 +114,112 @@ export class NotificationService {
   }
 
   /**
+   * Notify only employees whose shifts changed when publishing
+   */
+  static async notifySchedulePublishWithChanges(
+    scheduleId: string,
+    organizationId: string,
+    previousSnapshot?: Record<string, { assignments: { employeeId: string | null }[] }>,
+    currentSnapshot?: Record<string, { assignments: { employeeId: string | null }[]; startTime: string; endTime: string; position: string | null }>
+  ) {
+    const schedule = await prisma.schedule.findUnique({
+      where: { id: scheduleId },
+      include: {
+        slots: {
+          include: {
+            assignments: {
+              include: {
+                employee: { include: { user: true } },
+              },
+            },
+          },
+        },
+      },
+    })
+
+    if (!schedule) return
+
+    const changedUserIds = new Set<string>()
+    const prev = previousSnapshot ?? {}
+    const curr = currentSnapshot ?? {}
+
+    const allSlotIds = new Set([...Object.keys(prev), ...Object.keys(curr)])
+    for (const slotId of allSlotIds) {
+      const prevAssignments = prev[slotId]?.assignments ?? []
+      const currAssignments = curr[slotId]?.assignments ?? []
+      const prevEmployeeIds = new Set(prevAssignments.map((a) => a.employeeId).filter(Boolean) as string[])
+      const currEmployeeIds = new Set(currAssignments.map((a) => a.employeeId).filter(Boolean) as string[])
+      const allEmpIds = new Set([...prevEmployeeIds, ...currEmployeeIds])
+      for (const empId of allEmpIds) {
+        if (prevEmployeeIds.has(empId) !== currEmployeeIds.has(empId)) {
+          const emp = await prisma.employee.findUnique({ where: { id: empId }, select: { userId: true } })
+          if (emp) changedUserIds.add(emp.userId)
+        }
+      }
+    }
+
+    const affectedEmployees = new Map<string, { user: any; shifts: any[] }>()
+    schedule.slots.forEach((slot) => {
+      slot.assignments.forEach((a) => {
+        if (a.employee && changedUserIds.has(a.employee.userId)) {
+          const emp = a.employee
+          if (!affectedEmployees.has(emp.userId)) {
+            affectedEmployees.set(emp.userId, { user: emp.user, shifts: [] })
+          }
+          affectedEmployees.get(emp.userId)!.shifts.push({ ...slot, employee: emp })
+        }
+      })
+    })
+    for (const userId of changedUserIds) {
+      if (affectedEmployees.has(userId)) continue
+      const user = await prisma.user.findUnique({ where: { id: userId } })
+      if (user) affectedEmployees.set(userId, { user, shifts: [] })
+    }
+
+    for (const [userId, data] of affectedEmployees) {
+      const message = data.shifts.length > 0
+        ? this.getScheduleChangeMessage('published', data.shifts)
+        : 'Your schedule has been published. Some of your shifts may have been changed or removed.'
+      await this.createNotification(userId, 'schedule_change', message, { scheduleId, changeType: 'published' })
+      if (data.user.email) {
+        const emailHtml = data.shifts.length > 0
+          ? this.buildScheduleChangeEmail('published', data.shifts)
+          : `<html><body style="font-family: Arial, sans-serif; padding: 20px;"><h2>Schedule Published</h2><p>Your schedule has been published. Some of your shifts may have been changed or removed. Please check the app for details.</p></body></html>`
+        await this.sendEmail(data.user.email, 'Schedule Published', emailHtml)
+      }
+      if (data.user.phone) {
+        const smsText = data.shifts.length > 0
+          ? `Shiftely: Your schedule was published with ${data.shifts.length} shift(s). Check the app for details.`
+          : 'Shiftely: Your schedule was published. Check the app for details.'
+        await SmsService.sendSms(data.user.phone, smsText)
+      }
+    }
+  }
+
+  /**
    * Send daily schedule email
    */
   static async sendDailySchedule(employeeId: string, date: Date) {
+    const dayStart = new Date(date)
+    dayStart.setHours(0, 0, 0, 0)
+    const dayEnd = new Date(date)
+    dayEnd.setHours(23, 59, 59, 999)
+
     const employee = await prisma.employee.findUnique({
       where: { id: employeeId },
       include: {
         user: true,
-        shifts: {
+        slotAssignments: {
           where: {
-            startTime: {
-              gte: new Date(date.setHours(0, 0, 0, 0)),
-              lt: new Date(date.setHours(23, 59, 59, 999)),
+            slot: {
+              startTime: {
+                gte: dayStart,
+                lt: dayEnd,
+              },
             },
+          },
+          include: {
+            slot: true,
           },
         },
       },
@@ -131,7 +227,8 @@ export class NotificationService {
 
     if (!employee || !employee.user.email) return
 
-    const emailHtml = this.buildDailyScheduleEmail(employee.shifts, date)
+    const shifts = employee.slotAssignments.map((sa) => sa.slot)
+    const emailHtml = this.buildDailyScheduleEmail(shifts, date)
     await this.sendEmail(
       employee.user.email,
       `Your Schedule for ${format(date, 'MMMM d, yyyy')}`,
@@ -140,19 +237,23 @@ export class NotificationService {
   }
 
   /**
-   * Notify of shift swap request
+   * Notify of slot swap request
    */
-  static async notifyShiftSwap(
+  static async notifySlotSwap(
     swapId: string,
     notificationType: 'requested' | 'approved' | 'rejected'
   ) {
-    const swap = await prisma.shiftSwap.findUnique({
+    const swap = await prisma.slotSwap.findUnique({
       where: { id: swapId },
       include: {
-        shift: {
+        slot: {
           include: {
-            employee: {
-              include: { user: true },
+            assignments: {
+              include: {
+                employee: {
+                  include: { user: true },
+                },
+              },
             },
           },
         },
@@ -163,7 +264,8 @@ export class NotificationService {
 
     if (!swap) return
 
-    const targetUser = swap.targetEmployee || swap.shift.employee?.user
+    const assignedEmployee = swap.slot.assignments.find((a) => a.employeeId)?.employee
+    const targetUser = swap.targetEmployee || assignedEmployee?.user
     if (!targetUser) return
 
     const message = this.getShiftSwapMessage(notificationType, swap)
@@ -181,6 +283,25 @@ export class NotificationService {
         emailHtml
       )
     }
+
+    if (targetUser.phone) {
+      const slot = swap.slot
+      const shiftInfo = slot
+        ? `${format(new Date(slot.startTime), 'MMM d')} ${format(new Date(slot.startTime), 'h:mm a')}`
+        : ''
+      const smsText =
+        notificationType === 'requested'
+          ? `Shiftely: ${swap.requester.name || swap.requester.email} requested to swap ${shiftInfo} with you.`
+          : notificationType === 'approved'
+          ? 'Shiftely: Your shift swap was approved.'
+          : 'Shiftely: Your shift swap was rejected.'
+      await SmsService.sendSms(targetUser.phone, smsText)
+    }
+  }
+
+  /** @deprecated Use notifySlotSwap */
+  static async notifyShiftSwap(swapId: string, notificationType: 'requested' | 'approved' | 'rejected') {
+    return this.notifySlotSwap(swapId, notificationType)
   }
 
   /**
@@ -294,8 +415,9 @@ export class NotificationService {
    * Build shift swap email HTML
    */
   private static buildShiftSwapEmail(notificationType: string, swap: any): string {
-    const shiftDate = format(new Date(swap.shift.startTime), 'MMM d, yyyy')
-    const shiftTime = `${format(new Date(swap.shift.startTime), 'h:mm a')} - ${format(new Date(swap.shift.endTime), 'h:mm a')}`
+    const slot = swap.slot
+    const shiftDate = format(new Date(slot.startTime), 'MMM d, yyyy')
+    const shiftTime = `${format(new Date(slot.startTime), 'h:mm a')} - ${format(new Date(slot.endTime), 'h:mm a')}`
 
     return `
       <html>

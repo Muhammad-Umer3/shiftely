@@ -37,19 +37,18 @@ export function HeroSection() {
           {/* Badge */}
           <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 text-sm font-medium mb-10 animate-fade-in-up">
             <Zap className="h-4 w-4" />
-            <span>Built for small teams • Coming soon for SMEs</span>
+            <span>Built for small teams—no IT required</span>
           </div>
 
           <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-bold tracking-tight animate-fade-in-up delay-100">
-            <span className="text-white">Save </span>
-            <span className="gradient-text">10+ Hours</span>
+            <span className="text-white">Get your time back—</span>
+            <span className="gradient-text">AI schedules</span>
             <br />
-            <span className="text-white">Every Week</span>
+            <span className="text-white">in minutes, not hours</span>
           </h1>
           
           <p className="mt-8 text-lg sm:text-xl leading-relaxed text-stone-400 max-w-2xl mx-auto animate-fade-in-up delay-200">
-            The intelligent scheduling platform that eliminates conflicts, 
-            automates shift management, and keeps your entire team in sync.
+            Spreadsheets, missed shifts, and last-minute chaos don&apos;t scale. Add your team, set availability, and let AI build schedules that actually work.
           </p>
 
           {/* Key Benefits */}
@@ -58,30 +57,36 @@ export function HeroSection() {
               <div className="w-5 h-5 rounded-full bg-emerald-500/20 flex items-center justify-center">
                 <Check className="h-3 w-3 text-emerald-400" />
               </div>
-              <span>Join the waitlist</span>
+              <span>Fewer no-shows</span>
             </div>
             <div className="flex items-center gap-2">
               <div className="w-5 h-5 rounded-full bg-emerald-500/20 flex items-center justify-center">
                 <Check className="h-3 w-3 text-emerald-400" />
               </div>
-              <span>Be first to try</span>
+              <span>Less time on spreadsheets</span>
             </div>
             <div className="flex items-center gap-2">
               <div className="w-5 h-5 rounded-full bg-emerald-500/20 flex items-center justify-center">
                 <Check className="h-3 w-3 text-emerald-400" />
               </div>
-              <span>Built for small teams</span>
+              <span>One place for swaps and time off</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-5 h-5 rounded-full bg-emerald-500/20 flex items-center justify-center">
+                <Check className="h-3 w-3 text-emerald-400" />
+              </div>
+              <span>Free to start</span>
             </div>
           </div>
 
           {/* CTAs */}
           <div className="mt-12 flex flex-col sm:flex-row items-center justify-center gap-5 animate-fade-in-up delay-400">
-            <Link href="/#early-access" className="w-full sm:w-auto">
+            <Link href="/#pricing" className="w-full sm:w-auto">
               <Button 
                 size="lg" 
                 className="w-full sm:w-auto text-lg px-10 py-7 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-stone-950 font-semibold shadow-2xl shadow-amber-500/25 hover:shadow-amber-500/40 transition-all animate-pulse-glow"
               >
-                Get Early Access
+                See pricing
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
             </Link>
@@ -108,8 +113,8 @@ export function HeroSection() {
                 <div className="text-sm text-stone-500 mt-1">Scheduling</div>
               </div>
               <div className="text-center">
-                <div className="text-3xl md:text-4xl font-bold gradient-text">95%</div>
-                <div className="text-sm text-stone-500 mt-1">Less Conflicts</div>
+                <div className="text-3xl md:text-4xl font-bold gradient-text">Fewer</div>
+                <div className="text-sm text-stone-500 mt-1">Conflicts</div>
               </div>
               <div className="text-center">
                 <div className="text-3xl md:text-4xl font-bold gradient-text">5 min</div>

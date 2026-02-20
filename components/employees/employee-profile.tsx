@@ -1,7 +1,9 @@
 'use client'
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { AvailabilityCalendar } from '@/components/employees/availability-calendar'
+import { UnavailabilitySlots } from '@/components/employees/unavailability-slots'
+import { EmployeeDailyView } from '@/components/employees/employee-daily-view'
+import { EmployeeLeavesList } from '@/components/employees/employee-leaves-list'
 
 type EmployeeWithUser = {
   id: string
@@ -56,11 +58,31 @@ export function EmployeeProfile({ employee }: { employee: EmployeeWithUser }) {
 
       <Card className="border-stone-200 bg-white">
         <CardHeader>
-          <CardTitle className="text-stone-900">Availability</CardTitle>
-          <CardDescription className="text-stone-600">Set when this employee is available to work</CardDescription>
+          <CardTitle className="text-stone-900">Unavailable Slots</CardTitle>
+          <CardDescription className="text-stone-600">Mark times when this employee is not available to work</CardDescription>
         </CardHeader>
         <CardContent>
-          <AvailabilityCalendar employeeId={employee.id} />
+          <UnavailabilitySlots employeeId={employee.id} />
+        </CardContent>
+      </Card>
+
+      <Card className="md:col-span-2 border-stone-200 bg-white">
+        <CardHeader>
+          <CardTitle className="text-stone-900">Daily View</CardTitle>
+          <CardDescription className="text-stone-600">Shifts and leaves for this employee</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <EmployeeDailyView employeeId={employee.id} />
+        </CardContent>
+      </Card>
+
+      <Card className="md:col-span-2 border-stone-200 bg-white">
+        <CardHeader>
+          <CardTitle className="text-stone-900">Upcoming Leaves</CardTitle>
+          <CardDescription className="text-stone-600">Time off that will be considered when scheduling</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <EmployeeLeavesList employeeId={employee.id} />
         </CardContent>
       </Card>
 

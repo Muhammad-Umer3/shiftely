@@ -3,6 +3,7 @@ import { requireAuth } from '@/lib/utils/auth'
 import { prisma } from '@/lib/db/prisma'
 import bcrypt from 'bcryptjs'
 import { SubscriptionService } from '@/server/services/subscription/subscription.service'
+import { setOnboardingStep } from '@/lib/onboarding'
 
 export async function GET() {
   try {
@@ -70,6 +71,8 @@ export async function POST(req: NextRequest) {
         employee: true,
       },
     })
+
+    await setOnboardingStep(user.organizationId, 2)
 
     return NextResponse.json({ employee: newUser.employee }, { status: 201 })
   } catch (error) {

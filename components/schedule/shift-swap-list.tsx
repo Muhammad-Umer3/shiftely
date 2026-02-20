@@ -4,18 +4,20 @@ import { Button } from '@/components/ui/button'
 import { format } from 'date-fns'
 import { useState } from 'react'
 
-type ShiftSwap = {
+type SlotSwap = {
   id: string
-  shift: {
+  slot: {
     id: string
     startTime: Date
     endTime: Date
-    employee: {
-      user: {
-        name: string | null
-        email: string
-      }
-    } | null
+    assignments: {
+      employee: {
+        user: {
+          name: string | null
+          email: string
+        }
+      } | null
+    }[]
   }
   requester: {
     id: string
@@ -34,7 +36,7 @@ export function ShiftSwapList({
   swaps,
   currentUserId,
 }: {
-  swaps: ShiftSwap[]
+  swaps: SlotSwap[]
   currentUserId: string
 }) {
   const [processing, setProcessing] = useState<string | null>(null)
@@ -92,9 +94,9 @@ export function ShiftSwapList({
             <div className="flex items-center justify-between">
               <div>
                 <p className="font-medium text-stone-900">
-                  {format(new Date(swap.shift.startTime), 'MMM d, yyyy')} -{' '}
-                  {format(new Date(swap.shift.startTime), 'h:mm a')} to{' '}
-                  {format(new Date(swap.shift.endTime), 'h:mm a')}
+                  {format(new Date(swap.slot.startTime), 'MMM d, yyyy')} -{' '}
+                  {format(new Date(swap.slot.startTime), 'h:mm a')} to{' '}
+                  {format(new Date(swap.slot.endTime), 'h:mm a')}
                 </p>
                 <p className="text-sm text-stone-600">
                   {isRequester ? 'You requested' : `${swap.requester.name || swap.requester.email} requested`} to swap

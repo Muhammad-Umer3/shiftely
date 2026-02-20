@@ -12,12 +12,13 @@ export const authConfig = {
   callbacks: {
     authorized({ auth, request: { nextUrl } }) {
       const isLoggedIn = !!auth?.user
-      const isOnDashboard = nextUrl.pathname.startsWith('/dashboard')
-      if (isOnDashboard) {
+      const protectedPaths = ['/schedules', '/employees', '/swaps', '/time-off', '/settings', '/onboarding', '/help', '/schedule']
+      const isProtected = protectedPaths.some((p) => nextUrl.pathname === p || nextUrl.pathname.startsWith(p + '/'))
+      if (isProtected) {
         if (isLoggedIn) return true
-        return false // Redirect unauthenticated users to login page
+        return false
       } else if (isLoggedIn && (nextUrl.pathname.startsWith('/login') || nextUrl.pathname.startsWith('/register'))) {
-        return Response.redirect(new URL('/dashboard', nextUrl))
+        return Response.redirect(new URL('/schedules', nextUrl))
       }
       return true
     },

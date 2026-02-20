@@ -7,28 +7,32 @@ import { Button } from '@/components/ui/button'
 
 const faqs = [
   {
+    question: 'I\'m drowning in spreadsheets and last-minute changes—will this actually help?',
+    answer: 'Yes. Shiftely gives you one place for schedules and availability, so you stop retyping and chasing. AI generates a draft in minutes so you tweak instead of build from scratch. Notifications mean your team always sees their shifts, so you get fewer "I didn\'t know I was working" no-shows. Many teams save hours every week and cut scheduling conflicts to zero.',
+  },
+  {
     question: 'How does the AI scheduling work?',
-    answer: 'Our AI analyzes employee availability, skills, preferences, and historical data to suggest optimal shift assignments. It learns from your scheduling patterns and improves over time. You can accept, modify, or reject any suggestions.',
+    answer: 'Add your employees and set their availability (which days and times they can work). When you need a schedule for a week, click "Generate with AI." The AI uses everyone\'s availability to create an optimal schedule. You can review, tweak, and publish—no technical skills required.',
   },
   {
     question: 'Can employees swap shifts?',
-    answer: 'Yes! Employees can request shift swaps directly through the platform, and managers can approve or reject them with a single click. The system automatically checks for conflicts before allowing swaps. This feature is available on all paid plans.',
+    answer: 'Yes! Employees can request shift swaps directly through the platform, and managers can approve or reject them with a single click. The system automatically checks for conflicts before allowing swaps. This feature is available on Growth and Pro plans.',
   },
   {
     question: 'Is there a mobile app?',
-    answer: 'Currently, Shiftely works great on mobile browsers with a fully responsive design. Employees can view schedules, request time off, and swap shifts from any device. A dedicated mobile app is coming soon!',
+    answer: 'Currently, Shiftely works great on mobile browsers with a fully responsive design. Employees can view schedules and swap shifts from any device. A dedicated mobile app is coming soon!',
   },
   {
     question: 'What happens if I exceed my employee limit?',
     answer: 'You\'ll receive a friendly notification when you\'re approaching your limit. If you need to add more employees, you can easily upgrade your plan with a single click. No data is ever lost during plan changes.',
   },
   {
-    question: 'Can I export my schedule data?',
-    answer: 'Yes! Paid plans include CSV export functionality for payroll integration and reporting purposes. You can export schedules, hours worked, and employee data in various formats compatible with major payroll systems.',
+    question: 'Do I need technical skills to use Shiftely?',
+    answer: 'No. Shiftely is built for SMEs with non-technical staff. Add employees, set availability, and let AI generate schedules. It\'s designed to be simple from day one.',
   },
   {
-    question: 'How do I get early access?',
-    answer: 'Join our waitlist and tell us about your scheduling challenges. We\'ll reach out when we\'re ready for you.',
+    question: 'Is there a free trial?',
+    answer: 'Yes! All paid plans come with a 7-day free trial with full access to all features. A credit card is required to start your trial, but you won\'t be charged until the trial ends. Cancel anytime before the trial ends and you won\'t be charged.',
   },
 ]
 
@@ -81,7 +85,7 @@ export function FAQSection() {
               <span className="block gradient-text">questions</span>
             </h2>
             <p className="text-lg text-stone-400">
-              Everything you need to know about Shiftely
+              Common questions from business owners and managers
             </p>
           </div>
 

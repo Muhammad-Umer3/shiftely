@@ -75,7 +75,7 @@ export function ScheduleMonthView({
 
   const handleDayClick = (date: Date) => {
     const weekStart = startOfWeek(date, { weekStartsOn: 1 })
-    router.push(`/dashboard/schedule?week=${format(weekStart, 'yyyy-MM-dd')}`)
+    router.push(`/schedule?week=${format(weekStart, 'yyyy-MM-dd')}`)
     onDateSelect(weekStart)
   }
 

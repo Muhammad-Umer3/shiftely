@@ -11,16 +11,17 @@ export async function POST(
     const user = await requireAuth()
     const { id } = await params
 
-    const swap = await prisma.shiftSwap.findFirst({
+    const swap = await prisma.slotSwap.findFirst({
       where: {
         id,
+        organizationId: user.organizationId,
         OR: [
           { targetEmployeeId: user.id },
           { requesterId: user.id },
         ],
       },
       include: {
-        shift: true,
+        slot: true,
         requester: true,
         targetEmployee: true,
       },
@@ -35,23 +36,32 @@ export async function POST(
     }
 
     // Update swap status
-    const updatedSwap = await prisma.shiftSwap.update({
+    const updatedSwap = await prisma.slotSwap.update({
       where: { id },
       data: { status: 'APPROVED' },
     })
 
-    // Update shift employee if target employee is specified
-    if (swap.targetEmployeeId) {
-      await prisma.shift.update({
-        where: { id: swap.shiftId },
-        data: {
-          employeeId: swap.targetEmployeeId,
-        },
+    // Update slot assignment: replace requester's assignment with target employee
+    if (swap.slotAssignmentId && swap.targetEmployeeId) {
+      const targetEmployee = await prisma.employee.findFirst({
+        where: { userId: swap.targetEmployeeId, organizationId: user.organizationId },
+      })
+      if (targetEmployee) {
+        await prisma.slotAssignment.update({
+          where: { id: swap.slotAssignmentId },
+          data: { employeeId: targetEmployee.id },
+        })
+      }
+    } else if (swap.slotAssignmentId) {
+      // No target - just unassign (give away shift)
+      await prisma.slotAssignment.update({
+        where: { id: swap.slotAssignmentId },
+        data: { employeeId: null },
       })
     }
 
     // Send notifications
-    await NotificationService.notifyShiftSwap(swap.id, 'approved')
+    await NotificationService.notifySlotSwap(swap.id, 'approved')
 
     return NextResponse.json({ swap: updatedSwap }, { status: 200 })
   } catch (error) {

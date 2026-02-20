@@ -22,7 +22,7 @@ export function WeekPicker({ weekStart, className = '' }: WeekPickerProps) {
   const goToWeek = (date: Date) => {
     const params = new URLSearchParams(searchParams.toString())
     params.set('week', format(date, 'yyyy-MM-dd'))
-    router.push(`/dashboard/schedule?${params.toString()}`)
+    router.push(`/schedule?${params.toString()}`)
   }
 
   const goPrev = () => {

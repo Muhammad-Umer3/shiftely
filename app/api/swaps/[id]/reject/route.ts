@@ -11,9 +11,10 @@ export async function POST(
     const user = await requireAuth()
     const { id } = await params
 
-    const swap = await prisma.shiftSwap.findFirst({
+    const swap = await prisma.slotSwap.findFirst({
       where: {
         id,
+        organizationId: user.organizationId,
         OR: [
           { targetEmployeeId: user.id },
           { requesterId: user.id },
@@ -29,14 +30,12 @@ export async function POST(
       return NextResponse.json({ message: 'Swap already processed' }, { status: 400 })
     }
 
-    // Update swap status
-    const updatedSwap = await prisma.shiftSwap.update({
+    const updatedSwap = await prisma.slotSwap.update({
       where: { id },
       data: { status: 'REJECTED' },
     })
 
-    // Send notification
-    await NotificationService.notifyShiftSwap(swap.id, 'rejected')
+    await NotificationService.notifySlotSwap(swap.id, 'rejected')
 
     return NextResponse.json({ swap: updatedSwap }, { status: 200 })
   } catch (error) {

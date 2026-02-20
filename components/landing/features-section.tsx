@@ -1,49 +1,34 @@
 'use client'
 
-import { Calendar, Users, Brain, Bell, Shield, TrendingUp, Clock, Zap, ArrowRight } from 'lucide-react'
+import { Calendar, Users, Brain, Bell, Clock, Zap, ArrowRight } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 
 const features = [
   {
     icon: Brain,
-    title: 'No more spreadsheet chaos',
-    description: 'Replace messy spreadsheets with a simple calendar. One place for everyone\'s shifts.',
+    title: 'AI generates your schedule',
+    description: 'Hours on spreadsheets? Add employees and availability—AI generates a fair schedule in minutes.',
     highlight: true,
   },
   {
-    icon: Calendar,
-    title: 'Last-minute callouts?',
-    description: 'Quickly reassign shifts with drag-and-drop. No more scrambling when someone can\'t make it.',
+    icon: Users,
+    title: 'Simple availability calendar',
+    description: 'No more digging through texts. One calendar for who can work when.',
   },
   {
-    icon: Users,
-    title: 'Availability scattered everywhere',
-    description: 'Centralize who can work when. No more digging through texts and notes.',
+    icon: Calendar,
+    title: 'One place for everyone\'s shifts',
+    description: 'Replace messy spreadsheets. One calendar, drag-and-drop tweaks when needed.',
   },
   {
     icon: Bell,
-    title: '"I didn\'t know I was working"',
-    description: 'Automatic notifications so your team always knows their schedule.',
-  },
-  {
-    icon: Shield,
-    title: 'Labor law headaches',
-    description: 'Automatic overtime detection and hours tracking. Stay compliant without the stress.',
-  },
-  {
-    icon: TrendingUp,
-    title: 'Where did the hours go?',
-    description: 'See costs, coverage gaps, and who\'s overworked at a glance.',
+    title: 'Fewer no-shows',
+    description: 'Notifications so the team always knows their shifts.',
   },
   {
     icon: Clock,
-    title: 'Shift swaps eating your time',
-    description: 'Employees request swaps; you approve with one click. No back-and-forth.',
-  },
-  {
-    icon: Zap,
-    title: 'Payroll integration pain',
-    description: 'Export to CSV for seamless payroll. No manual data entry.',
+    title: 'Shift swaps in one click',
+    description: 'Swap requests in texts? Approve or reject in one click, no back-and-forth.',
   },
 ]
 
@@ -123,15 +108,15 @@ export function FeaturesSection() {
             Features
           </span>
           <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
-            Built for the scheduling headaches
-            <span className="block gradient-text">small teams face</span>
+            Everything you need to run shifts
+            <span className="block gradient-text">without the headache</span>
           </h2>
           <p className="text-lg text-stone-400">
-            We solve the pain points that keep SME managers up at night
+            Built for how you actually run your business
           </p>
         </div>
 
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 max-w-7xl mx-auto">
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 max-w-6xl mx-auto">
           {features.map((feature, index) => (
             <FeatureCard key={feature.title} feature={feature} index={index} />
           ))}
@@ -147,17 +132,20 @@ export function FeaturesSection() {
             }} />
             
             <div className="relative p-10 md:p-16">
+              <p className="text-stone-950/80 text-center mb-4">
+                Built so you spend less time scheduling and more time running your business.
+              </p>
               <h3 className="text-2xl md:text-3xl font-bold mb-10 text-center text-stone-950">
                 Why Small Teams Choose Shiftely
               </h3>
               <div className="grid md:grid-cols-3 gap-10 text-center">
                 <div className="space-y-2">
-                  <div className="text-5xl md:text-6xl font-bold text-stone-950">10+</div>
-                  <div className="text-stone-950/70 font-medium">Hours Saved Per Week</div>
+                  <div className="text-5xl md:text-6xl font-bold text-stone-950">Hours</div>
+                  <div className="text-stone-950/70 font-medium">Saved Per Week</div>
                 </div>
                 <div className="space-y-2">
-                  <div className="text-5xl md:text-6xl font-bold text-stone-950">95%</div>
-                  <div className="text-stone-950/70 font-medium">Reduction in Conflicts</div>
+                  <div className="text-5xl md:text-6xl font-bold text-stone-950">Fewer</div>
+                  <div className="text-stone-950/70 font-medium">Scheduling Conflicts</div>
                 </div>
                 <div className="space-y-2">
                   <div className="text-5xl md:text-6xl font-bold text-stone-950">5 min</div>

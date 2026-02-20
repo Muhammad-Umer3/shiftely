@@ -22,7 +22,7 @@ export function UpgradePrompt({ title, description, currentTier }: UpgradePrompt
         <CardDescription>{description}</CardDescription>
       </CardHeader>
       <CardContent>
-        <Link href="/dashboard/settings/subscription">
+        <Link href="/settings">
           <Button className="w-full">
             Upgrade Plan
           </Button>

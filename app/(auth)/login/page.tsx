@@ -76,7 +76,7 @@ function LoginForm() {
       if (result?.error) {
         setError('Invalid email or password')
       } else {
-        router.push('/dashboard')
+        router.push('/schedules')
         router.refresh()
       }
     } catch (error) {

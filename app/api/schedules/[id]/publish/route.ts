@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAuth } from '@/lib/utils/auth'
 import { SchedulerService } from '@/server/services/scheduler/scheduler.service'
+import { completeOnboarding } from '@/lib/onboarding'
 
 export async function POST(
   req: NextRequest,
@@ -10,7 +11,9 @@ export async function POST(
     const user = await requireAuth()
     const { id } = await params
 
-    const schedule = await SchedulerService.publishSchedule(id, user.organizationId)
+    const schedule = await SchedulerService.publishSchedule(id, user.organizationId, user.id)
+
+    await completeOnboarding(user.organizationId)
 
     return NextResponse.json({ schedule }, { status: 200 })
   } catch (error) {

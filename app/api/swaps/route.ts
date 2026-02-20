@@ -7,43 +7,61 @@ export async function POST(req: NextRequest) {
   try {
     const user = await requireAuth()
     const body = await req.json()
-    const { shiftId, targetEmployeeId } = body
+    const { slotId, targetEmployeeId } = body
 
-    // Verify shift belongs to organization
-    const shift = await prisma.shift.findFirst({
+    // Verify slot belongs to organization
+    const slot = await prisma.slot.findFirst({
       where: {
-        id: shiftId,
+        id: slotId,
         organizationId: user.organizationId,
       },
       include: {
-        employee: {
-          include: { user: true },
+        assignments: {
+          include: {
+            employee: {
+              include: { user: true },
+            },
+          },
         },
       },
     })
 
-    if (!shift) {
-      return NextResponse.json({ message: 'Shift not found' }, { status: 404 })
+    if (!slot) {
+      return NextResponse.json({ message: 'Slot not found' }, { status: 404 })
+    }
+
+    // Requester must have an assignment on this slot (or be the one giving it away)
+    const userEmployee = await prisma.employee.findFirst({
+      where: { userId: user.id, organizationId: user.organizationId },
+    })
+    if (!userEmployee) {
+      return NextResponse.json({ message: 'Employee record not found' }, { status: 404 })
+    }
+
+    const requesterAssignment = slot.assignments.find((a) => a.employeeId === userEmployee.id)
+    if (!requesterAssignment) {
+      return NextResponse.json({ message: 'You are not assigned to this slot' }, { status: 403 })
     }
 
     // Create swap request
-    const swap = await prisma.shiftSwap.create({
+    const swap = await prisma.slotSwap.create({
       data: {
-        shiftId,
+        slotId,
+        slotAssignmentId: requesterAssignment.id,
         organizationId: user.organizationId,
         requesterId: user.id,
         targetEmployeeId: targetEmployeeId || null,
         status: 'PENDING',
       },
       include: {
-        shift: true,
+        slot: true,
         requester: true,
         targetEmployee: true,
       },
     })
 
     // Send notification
-    await NotificationService.notifyShiftSwap(swap.id, 'requested')
+    await NotificationService.notifySlotSwap(swap.id, 'requested')
 
     return NextResponse.json({ swap }, { status: 201 })
   } catch (error) {
@@ -56,7 +74,7 @@ export async function GET(req: NextRequest) {
   try {
     const user = await requireAuth()
 
-    const swaps = await prisma.shiftSwap.findMany({
+    const swaps = await prisma.slotSwap.findMany({
       where: {
         OR: [
           { requesterId: user.id },
@@ -64,10 +82,14 @@ export async function GET(req: NextRequest) {
         ],
       },
       include: {
-        shift: {
+        slot: {
           include: {
-            employee: {
-              include: { user: true },
+            assignments: {
+              include: {
+                employee: {
+                  include: { user: true },
+                },
+              },
             },
           },
         },

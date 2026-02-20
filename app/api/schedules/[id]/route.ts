@@ -10,11 +10,10 @@ export async function PATCH(
     const user = await requireAuth()
     const { id } = await params
     const body = await req.json()
-    const { name, assignedEmployeeIds, displaySettings } = body
+    const { name, displaySettings } = body
 
-    const updateData: { name?: string; assignedEmployeeIds?: string[]; displaySettings?: { startHour: number; endHour: number; workingDays: number[] } | null } = {}
+    const updateData: { name?: string; displaySettings?: { startHour: number; endHour: number; workingDays: number[]; displayGroupIds?: string[] } | null } = {}
     if (typeof name === 'string') updateData.name = name
-    if (Array.isArray(assignedEmployeeIds)) updateData.assignedEmployeeIds = assignedEmployeeIds
     if (displaySettings !== undefined) {
       if (displaySettings === null) {
         updateData.displaySettings = null
@@ -27,6 +26,7 @@ export async function PATCH(
           startHour: displaySettings.startHour,
           endHour: displaySettings.endHour,
           workingDays: displaySettings.workingDays,
+          displayGroupIds: Array.isArray(displaySettings?.displayGroupIds) ? displaySettings.displayGroupIds : [],
         }
       }
     }

@@ -38,6 +38,13 @@ export function Navbar() {
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center gap-10">
             <Link 
+              href="/#problems" 
+              className="text-sm font-medium text-stone-400 hover:text-amber-400 transition-colors relative group"
+            >
+              Problems
+              <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-amber-400 group-hover:w-full transition-all duration-300" />
+            </Link>
+            <Link 
               href="/#features" 
               className="text-sm font-medium text-stone-400 hover:text-amber-400 transition-colors relative group"
             >
@@ -55,22 +62,25 @@ export function Navbar() {
               href="/#testimonials" 
               className="text-sm font-medium text-stone-400 hover:text-amber-400 transition-colors relative group"
             >
-              Reviews
+              Testimonials
               <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-amber-400 group-hover:w-full transition-all duration-300" />
             </Link>
             <Link 
-              href="/contact" 
+              href="/blog" 
               className="text-sm font-medium text-stone-400 hover:text-amber-400 transition-colors relative group"
             >
-              Contact
+              Blog
               <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-amber-400 group-hover:w-full transition-all duration-300" />
             </Link>
           </div>
 
-          <div className="hidden md:flex items-center gap-4">
-            <Link href="/#early-access">
+          <div className="hidden">
+            <Link href="/login" className="text-sm font-medium text-stone-400 hover:text-amber-400 transition-colors">
+              Log in
+            </Link>
+            <Link href="/register">
               <Button className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-stone-950 font-semibold shadow-lg shadow-amber-500/25 hover:shadow-amber-500/40 transition-all">
-                Get Early Access
+                Start Free
               </Button>
             </Link>
           </div>
@@ -93,6 +103,13 @@ export function Navbar() {
         {mobileMenuOpen && (
           <div className="md:hidden py-6 space-y-4 border-t border-stone-800 animate-fade-in">
             <Link
+              href="/#problems"
+              className="block px-4 py-3 text-sm font-medium text-stone-300 hover:text-amber-400 hover:bg-stone-800/50 rounded-lg transition-colors"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              Problems
+            </Link>
+            <Link
               href="/#features"
               className="block px-4 py-3 text-sm font-medium text-stone-300 hover:text-amber-400 hover:bg-stone-800/50 rounded-lg transition-colors"
               onClick={() => setMobileMenuOpen(false)}
@@ -111,19 +128,24 @@ export function Navbar() {
               className="block px-4 py-3 text-sm font-medium text-stone-300 hover:text-amber-400 hover:bg-stone-800/50 rounded-lg transition-colors"
               onClick={() => setMobileMenuOpen(false)}
             >
-              Reviews
+              Testimonials
             </Link>
             <Link
-              href="/contact"
+              href="/blog"
               className="block px-4 py-3 text-sm font-medium text-stone-300 hover:text-amber-400 hover:bg-stone-800/50 rounded-lg transition-colors"
               onClick={() => setMobileMenuOpen(false)}
             >
-              Contact
+              Blog
             </Link>
-            <div className="px-4 pt-4 border-t border-stone-800">
-              <Link href="/#early-access" className="block" onClick={() => setMobileMenuOpen(false)}>
+            <div className="hidden px-4 pt-4 border-t border-stone-800 space-y-2">
+              <Link href="/login" className="block" onClick={() => setMobileMenuOpen(false)}>
+                <Button variant="outline" className="w-full border-stone-700 text-stone-300">
+                  Log in
+                </Button>
+              </Link>
+              <Link href="/register" className="block" onClick={() => setMobileMenuOpen(false)}>
                 <Button className="w-full bg-gradient-to-r from-amber-500 to-amber-600 text-stone-950 font-semibold">
-                  Get Early Access
+                  Start Free
                 </Button>
               </Link>
             </div>

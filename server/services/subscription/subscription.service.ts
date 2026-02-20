@@ -85,7 +85,7 @@ export class SubscriptionService {
    */
   static async hasFeatureAccess(
     organizationId: string,
-    feature: 'ai_suggestions' | 'ai_recommendations' | 'csv_export' | 'overtime_alerts'
+    feature: 'ai_suggestions' | 'ai_recommendations'
   ): Promise<boolean> {
     const organization = await prisma.organization.findUnique({
       where: { id: organizationId },

@@ -1,8 +1,7 @@
 import { Navbar } from '@/components/landing/navbar'
 import { HeroSection } from '@/components/landing/hero-section'
+import { ProblemsSolutionsSection } from '@/components/landing/problems-solutions-section'
 import { FeaturesSection } from '@/components/landing/features-section'
-import { EarlyAccessSection } from '@/components/landing/early-access-section'
-import { IncomingFeaturesSection } from '@/components/landing/incoming-features-section'
 import { PricingSection } from '@/components/landing/pricing-section'
 import { TestimonialsSection } from '@/components/landing/testimonials-section'
 import { FAQSection } from '@/components/landing/faq-section'
@@ -14,9 +13,8 @@ export default function Home() {
       <Navbar />
       <main>
         <HeroSection />
+        <ProblemsSolutionsSection />
         <FeaturesSection />
-        <EarlyAccessSection />
-        <IncomingFeaturesSection />
         <PricingSection />
         <TestimonialsSection />
         <FAQSection />

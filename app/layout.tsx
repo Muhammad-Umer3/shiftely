@@ -18,20 +18,45 @@ const dmSans = DM_Sans({
 })
 
 export const metadata: Metadata = {
-  title: 'Shiftely - AI-Powered Shift Scheduling | Save 10+ Hours Per Week',
-  description: 'AI-powered shift scheduling software for small businesses. Eliminate scheduling conflicts, ensure compliance, and save 10+ hours per week. 7-day free trial.',
+  title: 'Shiftely - AI-Powered Shift Scheduling for Small Businesses',
+  description: 'AI-powered shift scheduling for SMEs. Add employees, set availability, and let AI generate schedules in minutes. No spreadsheets, no technical skills required.',
   keywords: 'shift scheduling software, employee scheduling app, workforce management, AI scheduling, staff scheduling, shift management software, free scheduling tool',
   openGraph: {
-    title: 'Shiftely - AI-Powered Shift Scheduling',
-    description: 'Save 10+ hours per week with AI-powered shift scheduling. 7-day free trial.',
+    title: 'Shiftely - AI-Powered Shift Scheduling for Small Businesses',
+    description: 'AI-powered shift scheduling for SMEs. Save hours every week. 7-day free trial.',
     type: 'website',
     url: 'https://shiftely.com',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Shiftely - AI-Powered Shift Scheduling',
-    description: 'Save 10+ hours per week with AI-powered shift scheduling.',
+    title: 'Shiftely - AI-Powered Shift Scheduling for Small Businesses',
+    description: 'AI-powered shift scheduling for SMEs. Save hours every week.',
   },
+}
+
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@graph': [
+    {
+      '@type': 'Organization',
+      '@id': 'https://shiftely.com/#organization',
+      name: 'Shiftely',
+      url: 'https://shiftely.com',
+      description: 'AI-powered shift scheduling for small businesses. Generate schedules in minutes, not hours.',
+    },
+    {
+      '@type': 'SoftwareApplication',
+      name: 'Shiftely',
+      applicationCategory: 'BusinessApplication',
+      operatingSystem: 'Web',
+      description: 'AI-powered shift scheduling for SMEs. Add employees, set availability, and let AI generate schedules in minutes.',
+      offers: {
+        '@type': 'Offer',
+        price: '0',
+        priceCurrency: 'USD',
+      },
+    },
+  ],
 }
 
 export default function RootLayout({
@@ -41,6 +66,14 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className={`${playfair.variable} ${dmSans.variable}`}>
+      <head>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(jsonLd).replace(/</g, '\\u003c'),
+          }}
+        />
+      </head>
       <body className="font-sans bg-stone-950 text-stone-50 antialiased">
         <SessionProvider>{children}</SessionProvider>
         <ContactFloatButton />

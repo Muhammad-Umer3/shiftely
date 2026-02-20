@@ -10,16 +10,16 @@ export class SchedulerService {
     organizationId: string,
     weekStartDate: Date,
     createdById: string,
-    options?: { name?: string; assignedEmployeeIds?: string[]; displaySettings?: { startHour: number; endHour: number; workingDays: number[] } }
+    options?: { name?: string; displaySettings?: { startHour: number; endHour: number; workingDays: number[] } }
   ) {
     const schedule = await prisma.schedule.create({
       data: {
         organizationId,
+        type: 'WEEK',
         weekStartDate,
         status: 'DRAFT',
         createdById,
         name: options?.name ?? null,
-        assignedEmployeeIds: options?.assignedEmployeeIds ?? [],
         displaySettings: options?.displaySettings ? (options.displaySettings as object) : undefined,
       },
     })
@@ -28,14 +28,13 @@ export class SchedulerService {
   }
 
   /**
-   * Update schedule name and/or assigned employees
+   * Update schedule name and/or display settings
    */
   static async updateSchedule(
     scheduleId: string,
     organizationId: string,
     data: {
       name?: string
-      assignedEmployeeIds?: string[]
       displaySettings?: { startHour: number; endHour: number; workingDays: number[] } | null
     }
   ) {
@@ -43,15 +42,14 @@ export class SchedulerService {
       where: { id: scheduleId, organizationId },
       data: {
         ...(data.name !== undefined && { name: data.name || null }),
-        ...(data.assignedEmployeeIds !== undefined && { assignedEmployeeIds: data.assignedEmployeeIds }),
         ...(data.displaySettings !== undefined && {
           displaySettings: data.displaySettings === null ? Prisma.DbNull : (data.displaySettings as Prisma.InputJsonValue),
         }),
       },
       include: {
-        scheduleShifts: {
+        slots: {
           include: {
-            shift: {
+            assignments: {
               include: {
                 employee: {
                   include: { user: true },
@@ -66,24 +64,17 @@ export class SchedulerService {
 
   /**
    * Publish a schedule (move from DRAFT to PUBLISHED)
+   * Creates a version snapshot and notifies employees with changed shifts
    */
-  static async publishSchedule(scheduleId: string, organizationId: string) {
-    const schedule = await prisma.schedule.update({
-      where: {
-        id: scheduleId,
-        organizationId,
-      },
-      data: {
-        status: 'PUBLISHED',
-      },
+  static async publishSchedule(scheduleId: string, organizationId: string, publishedById: string) {
+    const schedule = await prisma.schedule.findFirst({
+      where: { id: scheduleId, organizationId },
       include: {
-        scheduleShifts: {
+        slots: {
           include: {
-            shift: {
+            assignments: {
               include: {
-                employee: {
-                  include: { user: true },
-                },
+                employee: { include: { user: true } },
               },
             },
           },
@@ -91,17 +82,59 @@ export class SchedulerService {
       },
     })
 
-    return schedule
-  }
+    if (!schedule) throw new Error('Schedule not found')
 
-  /**
-   * Add a shift to a schedule
-   */
-  static async addShiftToSchedule(scheduleId: string, shiftId: string) {
-    await prisma.scheduleShift.create({
-      data: {
-        scheduleId,
-        shiftId,
+    const lastVersion = await prisma.scheduleVersion.findFirst({
+      where: { scheduleId },
+      orderBy: { version: 'desc' },
+    })
+    const nextVersion = (lastVersion?.version ?? 0) + 1
+
+    const slotSnapshot: Record<string, { assignments: { employeeId: string | null }[]; startTime: string; endTime: string; position: string | null }> = {}
+    schedule.slots.forEach((slot) => {
+      slotSnapshot[slot.id] = {
+        assignments: slot.assignments.map((a) => ({ employeeId: a.employeeId })),
+        startTime: slot.startTime.toISOString(),
+        endTime: slot.endTime.toISOString(),
+        position: slot.position,
+      }
+    })
+
+    await prisma.$transaction([
+      prisma.schedule.update({
+        where: { id: scheduleId, organizationId },
+        data: { status: 'PUBLISHED' },
+      }),
+      prisma.scheduleVersion.create({
+        data: {
+          scheduleId,
+          version: nextVersion,
+          slotSnapshot: slotSnapshot as object,
+          publishedById,
+        },
+      }),
+    ])
+
+    const { NotificationService } = await import('@/server/services/notifications/notification.service')
+    await NotificationService.notifySchedulePublishWithChanges(
+      scheduleId,
+      organizationId,
+      lastVersion?.slotSnapshot as Record<string, { assignments: { employeeId: string | null }[] }> | undefined,
+      slotSnapshot
+    )
+
+    return prisma.schedule.findFirst({
+      where: { id: scheduleId, organizationId },
+      include: {
+        slots: {
+          include: {
+            assignments: {
+              include: {
+                employee: { include: { user: true } },
+              },
+            },
+          },
+        },
       },
     })
   }
@@ -115,9 +148,9 @@ export class SchedulerService {
       orderBy: { weekStartDate: 'desc' },
       take: limit,
       include: {
-        scheduleShifts: {
+        slots: {
           include: {
-            shift: {
+            assignments: {
               include: {
                 employee: {
                   include: { user: true },
@@ -138,12 +171,13 @@ export class SchedulerService {
     const schedule = await prisma.schedule.findFirst({
       where: {
         organizationId,
+        type: 'WEEK',
         weekStartDate,
       },
       include: {
-        scheduleShifts: {
+        slots: {
           include: {
-            shift: {
+            assignments: {
               include: {
                 employee: {
                   include: { user: true },
@@ -159,7 +193,7 @@ export class SchedulerService {
   }
 
   /**
-   * Auto-fill shifts based on employee availability
+   * Auto-fill slots based on employee availability
    * If assignedEmployeeIds is provided and non-empty, only those employees are used
    */
   static async autoFillShifts(
@@ -181,70 +215,46 @@ export class SchedulerService {
     const weekEnd = endOfWeek(weekStartDate, { weekStartsOn: 1 })
     const weekDays = eachDayOfInterval({ start: weekStart, end: weekEnd })
 
-    const shifts: Array<{
-      employeeId: string
-      startTime: Date
-      endTime: Date
-      position: string | null
-    }> = []
-
-    // Simple auto-fill: assign 8-hour shifts to employees
-    // In production, this would use availability templates
-    employees.forEach((employee: any) => {
-      weekDays.forEach((day) => {
-        // Skip weekends for now (can be customized)
-        if (day.getDay() === 0 || day.getDay() === 6) return
-
-        const startTime = new Date(day)
-        startTime.setHours(9, 0, 0, 0) // 9 AM
-
-        const endTime = new Date(day)
-        endTime.setHours(17, 0, 0, 0) // 5 PM
-
-        shifts.push({
-          employeeId: employee.id,
-          startTime,
-          endTime,
-          position: employee.roleType || null,
-        })
-      })
-    })
-
-    // Get a user to use as creator
     const creator = await prisma.user.findFirst({ where: { organizationId } })
     if (!creator) {
       throw new Error('No users found in organization')
     }
 
-    // Create shifts
-    const createdShifts = await Promise.all(
-      shifts.map((shiftData: any) =>
-        prisma.shift.create({
+    const createdSlots: { id: string }[] = []
+
+    // Simple auto-fill: create one slot per employee per day (requiredCount=1)
+    for (const employee of employees) {
+      for (const day of weekDays) {
+        if (day.getDay() === 0 || day.getDay() === 6) continue
+
+        const startTime = new Date(day)
+        startTime.setHours(9, 0, 0, 0)
+        const endTime = new Date(day)
+        endTime.setHours(17, 0, 0, 0)
+
+        const slot = await prisma.slot.create({
           data: {
             organizationId,
-            employeeId: shiftData.employeeId,
-            startTime: shiftData.startTime,
-            endTime: shiftData.endTime,
-            position: shiftData.position,
+            scheduleId,
+            startTime,
+            endTime,
+            position: employee.roleType || null,
+            requiredCount: 1,
             createdById: creator.id,
           },
         })
-      )
-    )
-
-    // Add shifts to schedule
-    await Promise.all(
-      createdShifts.map((shift: any) =>
-        prisma.scheduleShift.create({
+        await prisma.slotAssignment.create({
           data: {
-            scheduleId,
-            shiftId: shift.id,
+            slotId: slot.id,
+            employeeId: employee.id,
+            slotIndex: 1,
           },
         })
-      )
-    )
+        createdSlots.push(slot)
+      }
+    }
 
-    return createdShifts
+    return createdSlots
   }
 
   /**
@@ -257,7 +267,7 @@ export class SchedulerService {
     createdById: string
   ) {
     const sourceSchedule = await this.getScheduleForWeek(organizationId, sourceWeekStart)
-    if (!sourceSchedule || sourceSchedule.scheduleShifts.length === 0) {
+    if (!sourceSchedule || sourceSchedule.slots.length === 0) {
       return { schedule: null, copiedCount: 0 }
     }
 
@@ -271,106 +281,70 @@ export class SchedulerService {
       targetSchedule = await prisma.schedule.create({
         data: {
           organizationId,
+          type: 'WEEK',
           weekStartDate: targetStart,
           status: 'DRAFT',
           createdById,
           name: sourceSchedule.name,
-          assignedEmployeeIds: sourceSchedule.assignedEmployeeIds ?? [],
           displaySettings: sourceSchedule.displaySettings as object | undefined,
         },
         include: {
-          scheduleShifts: true,
+          slots: {
+            include: {
+              assignments: {
+                include: {
+                  employee: { include: { user: true } },
+                },
+              },
+            },
+          },
         },
       }) as NonNullable<Awaited<ReturnType<typeof this.getScheduleForWeek>>>
     } else {
-      // Clear existing shifts when replacing
-      const scheduleId = targetSchedule.id
-      for (const ss of targetSchedule.scheduleShifts) {
-        await prisma.scheduleShift.delete({
-          where: {
-            scheduleId_shiftId: {
-              scheduleId,
-              shiftId: ss.shiftId,
-            },
-          },
-        })
-        await prisma.shift.delete({ where: { id: ss.shiftId } })
+      // Clear existing slots when replacing
+      for (const slot of targetSchedule.slots) {
+        await prisma.slotAssignment.deleteMany({ where: { slotId: slot.id } })
+        await prisma.slot.delete({ where: { id: slot.id } })
       }
     }
 
     const targetScheduleId = targetSchedule.id
-    const createdShifts: any[] = []
-    for (const { shift } of sourceSchedule.scheduleShifts) {
-      const oldStart = new Date(shift.startTime)
-      const oldEnd = new Date(shift.endTime)
+    let copiedCount = 0
+    for (const sourceSlot of sourceSchedule.slots) {
+      const oldStart = new Date(sourceSlot.startTime)
+      const oldEnd = new Date(sourceSlot.endTime)
       const newStart = addDays(oldStart, dayOffset)
       const newEnd = addDays(oldEnd, dayOffset)
 
-      const newShift = await prisma.shift.create({
+      const newSlot = await prisma.slot.create({
         data: {
           organizationId,
-          employeeId: shift.employeeId,
+          scheduleId: targetScheduleId,
           startTime: newStart,
           endTime: newEnd,
-          position: shift.position,
+          position: sourceSlot.position,
+          requiredCount: sourceSlot.requiredCount,
           createdById,
         },
       })
-      await prisma.scheduleShift.create({
-        data: {
-          scheduleId: targetScheduleId,
-          shiftId: newShift.id,
-        },
-      })
-      createdShifts.push(newShift)
+      for (let i = 0; i < sourceSlot.assignments.length; i++) {
+        const a = sourceSlot.assignments[i]
+        if (a.employeeId) {
+          await prisma.slotAssignment.create({
+            data: {
+              slotId: newSlot.id,
+              employeeId: a.employeeId,
+              slotIndex: i + 1,
+            },
+          })
+        }
+      }
+      copiedCount++
     }
 
     return {
       schedule: await this.getScheduleForWeek(organizationId, targetWeekStart),
-      copiedCount: createdShifts.length,
-    }
-  }
-
-  /**
-   * Calculate weekly hours for an employee
-   */
-  static async calculateWeeklyHours(employeeId: string, weekStartDate: Date) {
-    const weekStart = startOfWeek(weekStartDate, { weekStartsOn: 1 })
-    const weekEnd = endOfWeek(weekStartDate, { weekStartsOn: 1 })
-
-    const shifts = await prisma.shift.findMany({
-      where: {
-        employeeId,
-        startTime: {
-          gte: weekStart,
-          lte: weekEnd,
-        },
-        status: {
-          in: ['SCHEDULED', 'CONFIRMED'],
-        },
-      },
-    })
-
-    const totalHours = shifts.reduce((total: number, shift: any) => {
-      const hours = (shift.endTime.getTime() - shift.startTime.getTime()) / (1000 * 60 * 60)
-      return total + hours
-    }, 0)
-
-    return totalHours
-  }
-
-  /**
-   * Check for overtime (over 40 hours per week)
-   */
-  static async checkOvertime(employeeId: string, weekStartDate: Date) {
-    const weeklyHours = await this.calculateWeeklyHours(employeeId, weekStartDate)
-    const overtimeThreshold = 40
-    const overtimeHours = Math.max(0, weeklyHours - overtimeThreshold)
-
-    return {
-      weeklyHours,
-      overtimeHours,
-      hasOvertime: overtimeHours > 0,
+      copiedCount,
     }
   }
 }

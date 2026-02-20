@@ -13,6 +13,7 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
+import { EmployeeAvatar } from './employee-avatar'
 import { toast } from 'sonner'
 
 const TIME_SLOTS = [
@@ -213,9 +214,7 @@ export function ScheduleRosterView({
               >
                 <td className="sticky left-0 z-10 bg-white border-r border-stone-200 px-4 py-2">
                   <div className="flex items-center gap-2">
-                    <div className="h-8 w-8 rounded-full bg-stone-200 flex items-center justify-center text-xs font-medium text-stone-600">
-                      {(emp.user.name || emp.user.email).charAt(0).toUpperCase()}
-                    </div>
+                    <EmployeeAvatar name={emp.user.name} email={emp.user.email} size="md" />
                     <div>
                       <p className="font-medium text-stone-900 text-sm truncate max-w-[140px]">
                         {emp.user.name || emp.user.email}
