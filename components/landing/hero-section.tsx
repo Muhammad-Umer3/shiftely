@@ -1,10 +1,13 @@
 'use client'
 
+import { useState } from 'react'
 import { Button } from '@/components/ui/button'
-import Link from 'next/link'
-import { ArrowRight, Check, Calendar, Clock, Users, Zap } from 'lucide-react'
+import { Check, Calendar, Clock, Users, Zap, Bell } from 'lucide-react'
+import { ShowInterestDialog } from '@/components/landing/show-interest-dialog'
 
 export function HeroSection() {
+  const [showInterestOpen, setShowInterestOpen] = useState(false)
+
   return (
     <section className="relative min-h-screen overflow-hidden bg-stone-950 noise-overlay">
       {/* Animated background elements */}
@@ -37,11 +40,11 @@ export function HeroSection() {
           {/* Badge */}
           <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 text-sm font-medium mb-10 animate-fade-in-up">
             <Zap className="h-4 w-4" />
-            <span>Built for small teams—no IT required</span>
+            <span>Built for small teams. No IT required.</span>
           </div>
 
           <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-bold tracking-tight animate-fade-in-up delay-100">
-            <span className="text-white">Get your time back—</span>
+            <span className="text-white">Get your time back with </span>
             <span className="gradient-text">AI schedules</span>
             <br />
             <span className="text-white">in minutes, not hours</span>
@@ -79,27 +82,22 @@ export function HeroSection() {
             </div>
           </div>
 
-          {/* CTAs */}
-          <div className="mt-12 flex flex-col sm:flex-row items-center justify-center gap-5 animate-fade-in-up delay-400">
-            <Link href="/#pricing" className="w-full sm:w-auto">
-              <Button 
-                size="lg" 
-                className="w-full sm:w-auto text-lg px-10 py-7 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-stone-950 font-semibold shadow-2xl shadow-amber-500/25 hover:shadow-amber-500/40 transition-all animate-pulse-glow"
-              >
-                See pricing
-                <ArrowRight className="ml-2 h-5 w-5" />
-              </Button>
-            </Link>
-            <Link href="/#features" className="w-full sm:w-auto">
-              <Button 
-                size="lg" 
-                variant="outline" 
-                className="w-full sm:w-auto text-lg px-10 py-7 border-2 border-stone-700 text-stone-300 hover:border-amber-500/50 hover:text-amber-400 hover:bg-amber-500/5 transition-all"
-              >
-                Learn More
-              </Button>
-            </Link>
+          {/* CTA - Show interest only */}
+          <div className="mt-12 flex justify-center animate-fade-in-up delay-400">
+            <Button
+              size="lg"
+              className="w-full sm:w-auto text-lg px-10 py-7 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-stone-950 font-semibold shadow-2xl shadow-amber-500/25 hover:shadow-amber-500/40 transition-all animate-pulse-glow"
+              onClick={() => setShowInterestOpen(true)}
+            >
+              Show interest
+              <Bell className="ml-2 h-5 w-5" />
+            </Button>
           </div>
+          <ShowInterestDialog
+            source="hero"
+            open={showInterestOpen}
+            onOpenChange={setShowInterestOpen}
+          />
 
           {/* Stats row */}
           <div className="mt-20 pt-12 border-t border-stone-800 animate-fade-in-up delay-500">

@@ -3,11 +3,13 @@
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
 import { useState, useEffect } from 'react'
-import { Menu, X, Sparkles } from 'lucide-react'
+import { Menu, X, Sparkles, Bell } from 'lucide-react'
+import { ShowInterestDialog } from '@/components/landing/show-interest-dialog'
 
 export function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
+  const [showInterestOpen, setShowInterestOpen] = useState(false)
 
   useEffect(() => {
     const handleScroll = () => {
@@ -74,16 +76,20 @@ export function Navbar() {
             </Link>
           </div>
 
-          <div className="hidden">
-            <Link href="/login" className="text-sm font-medium text-stone-400 hover:text-amber-400 transition-colors">
-              Log in
-            </Link>
-            <Link href="/register">
-              <Button className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-stone-950 font-semibold shadow-lg shadow-amber-500/25 hover:shadow-amber-500/40 transition-all">
-                Start Free
-              </Button>
-            </Link>
+          <div className="hidden md:flex items-center">
+            <Button
+              className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-stone-950 font-semibold shadow-lg shadow-amber-500/25 hover:shadow-amber-500/40 transition-all"
+              onClick={() => setShowInterestOpen(true)}
+            >
+              Show interest
+              <Bell className="ml-2 h-4 w-4" />
+            </Button>
           </div>
+          <ShowInterestDialog
+            source="navbar"
+            open={showInterestOpen}
+            onOpenChange={setShowInterestOpen}
+          />
 
           {/* Mobile menu button */}
           <button
@@ -137,17 +143,17 @@ export function Navbar() {
             >
               Blog
             </Link>
-            <div className="hidden px-4 pt-4 border-t border-stone-800 space-y-2">
-              <Link href="/login" className="block" onClick={() => setMobileMenuOpen(false)}>
-                <Button variant="outline" className="w-full border-stone-700 text-stone-300">
-                  Log in
-                </Button>
-              </Link>
-              <Link href="/register" className="block" onClick={() => setMobileMenuOpen(false)}>
-                <Button className="w-full bg-gradient-to-r from-amber-500 to-amber-600 text-stone-950 font-semibold">
-                  Start Free
-                </Button>
-              </Link>
+            <div className="px-4 pt-4 border-t border-stone-800">
+              <Button
+                className="w-full justify-center bg-gradient-to-r from-amber-500 to-amber-600 text-stone-950 font-semibold"
+                onClick={() => {
+                  setShowInterestOpen(true)
+                  setMobileMenuOpen(false)
+                }}
+              >
+                Show interest
+                <Bell className="ml-2 h-4 w-4" />
+              </Button>
             </div>
           </div>
         )}

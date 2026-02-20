@@ -1,10 +1,14 @@
 'use client'
 
+import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
-import { ArrowRight, Check, Sparkles } from 'lucide-react'
+import { Check, Sparkles, Bell } from 'lucide-react'
+import { ShowInterestDialog } from '@/components/landing/show-interest-dialog'
 
 export function CTASection() {
+  const [showInterestOpen, setShowInterestOpen] = useState(false)
+
   return (
     <section className="py-24 bg-stone-900 relative overflow-hidden">
       {/* Background elements */}
@@ -65,27 +69,22 @@ export function CTASection() {
                   </div>
                 </div>
 
-                {/* CTAs */}
-                <div className="flex flex-col sm:flex-row items-center justify-center gap-5">
-                  <Link href="/#pricing" className="w-full sm:w-auto">
-                    <Button 
-                      size="lg" 
-                      className="w-full sm:w-auto text-lg px-12 py-8 bg-stone-950 text-amber-400 hover:bg-stone-900 shadow-2xl shadow-stone-950/30 transition-all font-semibold"
-                    >
-                      See pricing
-                      <ArrowRight className="ml-2 h-5 w-5" />
-                    </Button>
-                  </Link>
-                  <Link href="/contact" className="w-full sm:w-auto">
-                    <Button 
-                      size="lg" 
-                      variant="outline" 
-                      className="w-full sm:w-auto text-lg px-12 py-8 bg-transparent border-2 border-stone-950/30 text-stone-950 hover:bg-stone-950/10 hover:border-stone-950/50 font-semibold"
-                    >
-                      Contact us
-                    </Button>
-                  </Link>
+                {/* CTA - Show interest only */}
+                <div className="flex justify-center">
+                  <Button
+                    size="lg"
+                    className="w-full sm:w-auto text-lg px-12 py-8 bg-stone-950 text-amber-400 hover:bg-stone-900 shadow-2xl shadow-stone-950/30 transition-all font-semibold"
+                    onClick={() => setShowInterestOpen(true)}
+                  >
+                    Show interest
+                    <Bell className="ml-2 h-5 w-5" />
+                  </Button>
                 </div>
+                <ShowInterestDialog
+                  source="cta"
+                  open={showInterestOpen}
+                  onOpenChange={setShowInterestOpen}
+                />
 
                 {/* Trust indicators */}
                 <p className="mt-10 text-sm text-stone-950/60 font-medium">

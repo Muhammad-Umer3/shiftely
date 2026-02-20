@@ -10,7 +10,7 @@ const problemSolutionPairs = [
     icon: Calendar,
   },
   {
-    problem: '"I didn\'t know I was working" — no-shows and confusion',
+    problem: '"I didn\'t know I was working": no-shows and confusion',
     solution: 'Notifications so everyone sees their shifts; one calendar for the whole team.',
     icon: AlertCircle,
   },
@@ -90,7 +90,7 @@ export function ProblemsSolutionsSection() {
             <span className="block gradient-text">solve</span>
           </h2>
           <p className="text-lg text-stone-400">
-            We built Shiftely around the real pains of running shifts—so you spend less time scheduling and more time running your business.
+            We built Shiftely around the real pains of running shifts, so you spend less time scheduling and more time running your business.
           </p>
         </div>
 

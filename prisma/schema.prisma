@@ -507,3 +507,16 @@ model Invitation {
   @@index([status])
   @@map("invitations")
 }
+
+model Lead {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  phone     String?
+  source    String?
+  createdAt DateTime @default(now())
+
+  @@index([email])
+  @@index([createdAt])
+  @@map("leads")
+}

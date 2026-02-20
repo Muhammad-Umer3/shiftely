@@ -1,4 +1,3 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { requireAuth } from '@/lib/utils/auth'
 import { prisma } from '@/lib/db/prisma'
 import { notFound } from 'next/navigation'

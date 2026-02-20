@@ -7,12 +7,12 @@ import { Button } from '@/components/ui/button'
 
 const faqs = [
   {
-    question: 'I\'m drowning in spreadsheets and last-minute changes—will this actually help?',
+    question: 'I\'m drowning in spreadsheets and last-minute changes. Will this actually help?',
     answer: 'Yes. Shiftely gives you one place for schedules and availability, so you stop retyping and chasing. AI generates a draft in minutes so you tweak instead of build from scratch. Notifications mean your team always sees their shifts, so you get fewer "I didn\'t know I was working" no-shows. Many teams save hours every week and cut scheduling conflicts to zero.',
   },
   {
     question: 'How does the AI scheduling work?',
-    answer: 'Add your employees and set their availability (which days and times they can work). When you need a schedule for a week, click "Generate with AI." The AI uses everyone\'s availability to create an optimal schedule. You can review, tweak, and publish—no technical skills required.',
+    answer: 'Add your employees and set their availability (which days and times they can work). When you need a schedule for a week, click "Generate with AI." The AI uses everyone\'s availability to create an optimal schedule. You can review, tweak, and publish. No technical skills required.',
   },
   {
     question: 'Can employees swap shifts?',

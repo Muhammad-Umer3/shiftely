@@ -7,7 +7,7 @@ const features = [
   {
     icon: Brain,
     title: 'AI generates your schedule',
-    description: 'Hours on spreadsheets? Add employees and availability—AI generates a fair schedule in minutes.',
+    description: 'Hours on spreadsheets? Add employees and availability. AI generates a fair schedule in minutes.',
     highlight: true,
   },
   {

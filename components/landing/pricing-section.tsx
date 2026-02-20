@@ -84,8 +84,7 @@ export function PricingSection() {
                     </p>
                     
                     <div className="mb-8">
-                      <span className="text-5xl font-bold text-white">${tier.price}</span>
-                      {!isFree && <span className="text-stone-500 text-lg">/month</span>}
+                      <span className="text-lg font-medium text-stone-400">Contact for pricing</span>
                     </div>
                     
                     <ul className="space-y-4 mb-10">
