@@ -4,6 +4,7 @@ import './globals.css'
 import { SessionProvider } from '@/components/providers/session-provider'
 import { Toaster } from '@/components/ui/toast'
 import { ContactFloatButton } from '@/components/landing/contact-float-button'
+import { Analytics } from '@vercel/analytics/next'
 
 const playfair = Playfair_Display({
   subsets: ['latin'],
@@ -78,6 +79,7 @@ export default function RootLayout({
         <SessionProvider>{children}</SessionProvider>
         <ContactFloatButton />
         <Toaster />
+        <Analytics />
       </body>
     </html>
   )
