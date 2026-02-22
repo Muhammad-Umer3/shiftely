@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json()
-    const { name, email, phone, password, roleType, hourlyRate } = body
+    const { name, email, phone, password, roleType, hourlyRate, defaultHoursPerWeek } = body
 
     // Check if user already exists
     const existingUser = await prisma.user.findUnique({
@@ -64,6 +64,7 @@ export async function POST(req: NextRequest) {
             organizationId: user.organizationId,
             roleType: roleType || null,
             hourlyRate: hourlyRate ? parseFloat(hourlyRate) : null,
+            defaultHoursPerWeek: defaultHoursPerWeek != null ? parseInt(String(defaultHoursPerWeek), 10) : null,
           },
         },
       },

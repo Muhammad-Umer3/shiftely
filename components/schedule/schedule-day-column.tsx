@@ -6,9 +6,9 @@ import { ShiftCard } from './shift-card'
 import { DroppableSlot, slotDropId } from './droppable-slot'
 import type { TimeOffByEmployee } from './schedule-calendar'
 
-function buildTimeSlots(startHour: number, endHour: number): string[] {
+function buildTimeSlots(startHour: number, endHour: number, slotDurationHours: number = 1): string[] {
   const slots: string[] = []
-  for (let h = startHour; h < endHour; h++) {
+  for (let h = startHour; h < endHour; h += slotDurationHours) {
     slots.push(`${h.toString().padStart(2, '0')}:00`)
   }
   return slots
@@ -28,6 +28,8 @@ type Shift = {
   } | null
 }
 
+const MIN_HEIGHT_PER_HOUR = 60
+
 export function ScheduleDayColumn({
   day,
   dayName,
@@ -36,6 +38,7 @@ export function ScheduleDayColumn({
   shiftWarnings = {},
   startHour = 6,
   endHour = 22,
+  slotDurationHours = 1,
   canEdit = true,
   timeOffByEmployee = {},
 }: {
@@ -46,14 +49,20 @@ export function ScheduleDayColumn({
   shiftWarnings?: Record<string, { overtime?: boolean; conflict?: boolean }>
   startHour?: number
   endHour?: number
+  slotDurationHours?: number
   canEdit?: boolean
   timeOffByEmployee?: TimeOffByEmployee
 }) {
-  const timeSlots = buildTimeSlots(startHour, endHour)
+  const timeSlots = buildTimeSlots(startHour, endHour, slotDurationHours)
   const dayStr = format(day, 'yyyy-MM-dd')
+  const slotMinHeight = slotDurationHours * MIN_HEIGHT_PER_HOUR
 
   const shiftsByTime = shifts.reduce((acc, shift) => {
-    const time = format(new Date(shift.startTime), 'HH:mm')
+    const shiftStart = new Date(shift.startTime)
+    const shiftHour = shiftStart.getHours() + shiftStart.getMinutes() / 60
+    const slotStartHour = Math.floor((shiftHour - startHour) / slotDurationHours) * slotDurationHours + startHour
+    const time = `${slotStartHour.toString().padStart(2, '0')}:00`
+    if (!timeSlots.includes(time)) return acc
     if (!acc[time]) acc[time] = []
     acc[time].push(shift)
     return acc
@@ -72,7 +81,7 @@ export function ScheduleDayColumn({
           const dropId = `${dayStr}|${timeSlot}`
 
           return (
-            <div key={timeSlot} className="space-y-1">
+            <div key={timeSlot} className="space-y-1" style={{ minHeight: slotMinHeight }}>
               <div className="text-xs text-stone-500 px-1">{timeSlot}</div>
               <DroppableSlot id={slotDropId(dayStr, timeSlot)}>
                 <SortableContext items={slotShifts.map((s) => s.id)} strategy={verticalListSortingStrategy}>

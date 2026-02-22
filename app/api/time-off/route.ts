@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ message: 'Invalid type' }, { status: 400 })
     }
 
-    const request = await prisma.timeOffRequest.create({
+    const leave = await prisma.employeeLeave.create({
       data: {
         employeeId: employee.id,
         organizationId: user.organizationId,
@@ -48,10 +48,11 @@ export async function POST(req: NextRequest) {
       },
       include: {
         employee: { include: { user: true } },
+        approver: { select: { name: true, email: true } },
       },
     })
 
-    return NextResponse.json({ request }, { status: 201 })
+    return NextResponse.json({ request: leave }, { status: 201 })
   } catch (error) {
     console.error('Time-off request error:', error)
     return NextResponse.json(
@@ -72,7 +73,7 @@ export async function GET(req: NextRequest) {
     })
 
     if (scope === 'mine' && employee) {
-      const requests = await prisma.timeOffRequest.findMany({
+      const requests = await prisma.employeeLeave.findMany({
         where: { employeeId: employee.id },
         include: { approver: { select: { name: true, email: true } } },
         orderBy: { createdAt: 'desc' },
@@ -88,7 +89,7 @@ export async function GET(req: NextRequest) {
           ? { employeeId: employee.id, ...(scope === 'pending' && { status: 'PENDING' }) }
           : { employeeId: 'none' }
 
-      const requests = await prisma.timeOffRequest.findMany({
+      const requests = await prisma.employeeLeave.findMany({
         where,
         include: {
           employee: { include: { user: true } },

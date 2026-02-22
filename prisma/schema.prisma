@@ -83,7 +83,6 @@ model Organization {
   employeeLeaves    EmployeeLeave[]
   employeeGroups   EmployeeGroup[]
   events           Event[]
-  timeOffRequests  TimeOffRequest[]
 
   @@map("organizations")
 }
@@ -114,7 +113,7 @@ model User {
   passwordResetTokens  PasswordResetToken[]
   sentInvitations      Invitation[]  @relation("Inviter")
   publishedVersions    ScheduleVersion[]
-  timeOffApprovals     TimeOffRequest[]
+  leaveApprovals      EmployeeLeave[]   @relation("LeaveApprover")
   scheduleChatMessages ScheduleChatMessage[]
 
   @@index([organizationId])
@@ -123,15 +122,16 @@ model User {
 }
 
 model Employee {
-  id                  String   @id @default(cuid())
-  userId              String   @unique
-  organizationId      String
-  roleType            String?
-  hourlyRate          Decimal? @db.Decimal(10, 2)
+  id                   String   @id @default(cuid())
+  userId               String   @unique
+  organizationId       String
+  roleType             String?
+  hourlyRate           Decimal? @db.Decimal(10, 2)
+  defaultHoursPerWeek  Int?     @default(40)
   availabilityTemplate Json?    @default("{}")
-  skills              Json?    @default("[]")
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime @updatedAt
+  skills               Json?    @default("[]")
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
 
   user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   organization      Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
@@ -139,7 +139,6 @@ model Employee {
   availabilityRequests AvailabilityRequest[]
   timeTrackings     TimeTracking[]
   leaves            EmployeeLeave[]
-  timeOffRequests   TimeOffRequest[]
   groupMemberships  EmployeeGroupMember[]
 
   @@index([organizationId])
@@ -174,48 +173,29 @@ model EmployeeGroupMember {
 }
 
 model EmployeeLeave {
-  id             String   @id @default(cuid())
+  id             String    @id @default(cuid())
   employeeId     String
   organizationId String
   startDate      DateTime
   endDate        DateTime
-  type           String
+  type           String    // reason: vacation, sick, personal, unpaid, other
   notes          String?
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  status         String    @default("APPROVED") // APPROVED, PENDING, REJECTED
+  approverId     String?
+  respondedAt    DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
 
   employee     Employee     @relation(fields: [employeeId], references: [id], onDelete: Cascade)
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  approver     User?        @relation("LeaveApprover", fields: [approverId], references: [id], onDelete: SetNull)
 
   @@index([employeeId])
   @@index([organizationId])
   @@index([startDate])
   @@index([endDate])
-  @@map("employee_leaves")
-}
-
-model TimeOffRequest {
-  id             String   @id @default(cuid())
-  employeeId     String
-  organizationId String
-  startDate      DateTime
-  endDate        DateTime
-  type           String
-  notes          String?
-  status         String   @default("PENDING") // PENDING, APPROVED, REJECTED
-  approverId     String?
-  respondedAt    DateTime?
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-
-  employee     Employee     @relation(fields: [employeeId], references: [id], onDelete: Cascade)
-  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  approver     User?        @relation(fields: [approverId], references: [id], onDelete: SetNull)
-
-  @@index([employeeId])
-  @@index([organizationId])
   @@index([status])
-  @@map("time_off_requests")
+  @@map("employee_leaves")
 }
 
 model Event {

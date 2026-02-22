@@ -14,35 +14,23 @@ export async function POST(
       return NextResponse.json({ message: 'Only managers can approve time-off requests' }, { status: 403 })
     }
 
-    const timeOff = await prisma.timeOffRequest.findFirst({
+    const leave = await prisma.employeeLeave.findFirst({
       where: { id, organizationId: user.organizationId },
       include: { employee: true },
     })
 
-    if (!timeOff) {
+    if (!leave) {
       return NextResponse.json({ message: 'Request not found' }, { status: 404 })
     }
 
-    if (timeOff.status !== 'PENDING') {
+    if (leave.status !== 'PENDING') {
       return NextResponse.json({ message: 'Request already processed' }, { status: 400 })
     }
 
-    await prisma.$transaction([
-      prisma.timeOffRequest.update({
-        where: { id },
-        data: { status: 'APPROVED', approverId: user.id, respondedAt: new Date() },
-      }),
-      prisma.employeeLeave.create({
-        data: {
-          employeeId: timeOff.employeeId,
-          organizationId: timeOff.organizationId,
-          startDate: timeOff.startDate,
-          endDate: timeOff.endDate,
-          type: timeOff.type,
-          notes: timeOff.notes,
-        },
-      }),
-    ])
+    await prisma.employeeLeave.update({
+      where: { id },
+      data: { status: 'APPROVED', approverId: user.id, respondedAt: new Date() },
+    })
 
     return NextResponse.json({ message: 'Approved' }, { status: 200 })
   } catch (error) {

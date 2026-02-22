@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { useForm } from 'react-hook-form'
+import { useForm, type Resolver } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
 import { useRouter } from 'next/navigation'
@@ -17,6 +17,7 @@ const addEmployeeSchema = z.object({
   phone: z.string().optional(),
   password: z.string().min(6, 'Password must be at least 6 characters'),
   roleType: z.string().optional(),
+  defaultHoursPerWeek: z.coerce.number().int().min(1).max(168).optional(),
 })
 
 type AddEmployeeFormData = z.infer<typeof addEmployeeSchema>
@@ -31,7 +32,8 @@ export function AddEmployeeForm({ onSuccess, redirectTo }: { onSuccess?: () => v
     formState: { errors },
     reset,
   } = useForm<AddEmployeeFormData>({
-    resolver: zodResolver(addEmployeeSchema),
+    resolver: zodResolver(addEmployeeSchema) as Resolver<AddEmployeeFormData>,
+    defaultValues: { defaultHoursPerWeek: 40 },
   })
 
   const onSubmit = async (data: AddEmployeeFormData) => {
@@ -46,6 +48,7 @@ export function AddEmployeeForm({ onSuccess, redirectTo }: { onSuccess?: () => v
           phone: data.phone || undefined,
           password: data.password,
           roleType: data.roleType || undefined,
+          defaultHoursPerWeek: data.defaultHoursPerWeek ?? undefined,
         }),
       })
 
@@ -134,6 +137,19 @@ export function AddEmployeeForm({ onSuccess, redirectTo }: { onSuccess?: () => v
           className="border-stone-300 focus:border-amber-500 focus:ring-amber-500/20"
           {...register('roleType')}
         />
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="defaultHoursPerWeek" className="text-stone-700">Default hours per week (optional)</Label>
+        <Input
+          id="defaultHoursPerWeek"
+          type="number"
+          min={1}
+          max={168}
+          placeholder="40"
+          className="border-stone-300 focus:border-amber-500 focus:ring-amber-500/20"
+          {...register('defaultHoursPerWeek', { valueAsNumber: true })}
+        />
+        <p className="text-xs text-stone-500">Used for availability bar on the schedule (default 40)</p>
       </div>
       <div className="flex gap-3 pt-2">
         <Button

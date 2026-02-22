@@ -15,6 +15,7 @@ type EmployeeWithUser = {
   }
   roleType: string | null
   hourlyRate: number | null
+  defaultHoursPerWeek?: number | null
   shifts?: Array<{
     id: string
     startTime: Date
@@ -47,12 +48,16 @@ export function EmployeeProfile({ employee }: { employee: EmployeeWithUser }) {
               <p className="text-lg text-stone-900">{employee.roleType}</p>
             </div>
           )}
-          {employee.hourlyRate && (
+          {employee.hourlyRate != null && employee.hourlyRate > 0 && (
             <div>
               <p className="text-sm font-medium text-stone-600">Hourly Rate</p>
               <p className="text-lg text-stone-900">${employee.hourlyRate.toString()}/hr</p>
             </div>
           )}
+          <div>
+            <p className="text-sm font-medium text-stone-600">Default hours per week</p>
+            <p className="text-lg text-stone-900">{employee.defaultHoursPerWeek ?? 40}h</p>
+          </div>
         </CardContent>
       </Card>
 

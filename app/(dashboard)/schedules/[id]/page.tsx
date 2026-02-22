@@ -92,6 +92,7 @@ export default async function ScheduleDetailPage({ params, searchParams }: PageP
     workingDays?: number[]
     displayGroupIds?: string[]
     shiftDefaults?: { minPeople?: number; maxPeople?: number }
+    slotDurationHours?: number
   } | null
   const displayGroupIds = Array.isArray(scheduleDisplay?.displayGroupIds) ? scheduleDisplay.displayGroupIds : []
 
@@ -116,6 +117,7 @@ export default async function ScheduleDetailPage({ params, searchParams }: PageP
   const employees = employeesFiltered.map((e) => ({
     ...e,
     hourlyRate: e.hourlyRate != null ? Number(e.hourlyRate) : null,
+    defaultHoursPerWeek: e.defaultHoursPerWeek ?? undefined,
   }))
 
   const canEdit = await checkPermission(PERMISSIONS.SCHEDULE_EDIT)
@@ -128,6 +130,7 @@ export default async function ScheduleDetailPage({ params, searchParams }: PageP
   const orgScheduleSettings = (orgSettings.scheduleSettings as { startHour?: number; endHour?: number; workingDays?: number[] }) ?? {}
   const displayStartHour = scheduleDisplay?.startHour ?? orgScheduleSettings.startHour ?? 6
   const displayEndHour = scheduleDisplay?.endHour ?? orgScheduleSettings.endHour ?? 22
+  const slotDurationHours = [1, 2, 4].includes(Number(scheduleDisplay?.slotDurationHours)) ? Number(scheduleDisplay?.slotDurationHours) : 1
   const workingDays = Array.isArray(scheduleDisplay?.workingDays)
     ? scheduleDisplay.workingDays
     : Array.isArray(orgScheduleSettings.workingDays)
@@ -143,9 +146,9 @@ export default async function ScheduleDetailPage({ params, searchParams }: PageP
 
   const weekEnd = addDays(weekStart, 6)
   const employeeIds = employees.map((e) => e.id)
-  const [leaves, approvedTimeOff] = await Promise.all([
+  const leaves =
     employeeIds.length > 0
-      ? prisma.employeeLeave.findMany({
+      ? await prisma.employeeLeave.findMany({
           where: {
             organizationId: user.organizationId,
             employeeId: { in: employeeIds },
@@ -154,24 +157,11 @@ export default async function ScheduleDetailPage({ params, searchParams }: PageP
           },
           orderBy: { startDate: 'asc' },
         })
-      : [],
-    employeeIds.length > 0
-      ? prisma.timeOffRequest.findMany({
-          where: {
-            organizationId: user.organizationId,
-            employeeId: { in: employeeIds },
-            status: 'APPROVED',
-            startDate: { lte: weekEnd },
-            endDate: { gte: weekStart },
-          },
-          orderBy: { startDate: 'asc' },
-        })
-      : [],
-  ])
+      : []
 
   const timeOffByEmployee: Record<
     string,
-    { leaves: { id: string; startDate: Date; endDate: Date; type: string; notes: string | null }[]; requests: { id: string; startDate: Date; endDate: Date; type: string; notes: string | null }[] }
+    { leaves: { id: string; startDate: Date; endDate: Date; type: string; notes: string | null; status: string }[]; requests: { id: string; startDate: Date; endDate: Date; type: string; notes: string | null }[] }
   > = {}
   for (const l of leaves) {
     if (!timeOffByEmployee[l.employeeId]) timeOffByEmployee[l.employeeId] = { leaves: [], requests: [] }
@@ -181,16 +171,7 @@ export default async function ScheduleDetailPage({ params, searchParams }: PageP
       endDate: l.endDate,
       type: l.type,
       notes: l.notes,
-    })
-  }
-  for (const r of approvedTimeOff) {
-    if (!timeOffByEmployee[r.employeeId]) timeOffByEmployee[r.employeeId] = { leaves: [], requests: [] }
-    timeOffByEmployee[r.employeeId].requests.push({
-      id: r.id,
-      startDate: r.startDate,
-      endDate: r.endDate,
-      type: r.type,
-      notes: r.notes,
+      status: l.status,
     })
   }
   const timeOffByEmployeeSerialized = Object.fromEntries(
@@ -202,6 +183,28 @@ export default async function ScheduleDetailPage({ params, searchParams }: PageP
       },
     ])
   )
+
+  const HOURS_PER_LEAVE_DAY = 8
+  const employeeHoursAvailable: Record<string, number> = {}
+  for (const e of employees) {
+    const defaultHours = e.defaultHoursPerWeek ?? 40
+    let leaveHours = 0
+    const approvedLeaves = (timeOffByEmployee[e.id]?.leaves ?? []).filter((l) => l.status === 'APPROVED')
+    for (const l of approvedLeaves) {
+      const start = new Date(l.startDate)
+      const end = new Date(l.endDate)
+      const weekStartDate = weekStart.getTime()
+      const weekEndDate = weekEnd.getTime()
+      const overlapStart = Math.max(start.getTime(), weekStartDate)
+      const overlapEnd = Math.min(end.getTime(), weekEndDate)
+      if (overlapEnd > overlapStart) {
+        const dayMs = 24 * 60 * 60 * 1000
+        const days = Math.floor((overlapEnd - overlapStart) / dayMs) + 1
+        leaveHours += Math.min(days, 7) * HOURS_PER_LEAVE_DAY
+      }
+    }
+    employeeHoursAvailable[e.id] = Math.max(0, defaultHours - leaveHours)
+  }
 
   return (
     <div className="space-y-6 text-stone-900">
@@ -275,6 +278,8 @@ export default async function ScheduleDetailPage({ params, searchParams }: PageP
               workingDays={workingDays}
               canEdit={canEdit}
               timeOffByEmployee={timeOffByEmployeeSerialized}
+              employeeHoursAvailable={employeeHoursAvailable}
+              slotDurationHours={slotDurationHours}
             />
           )}
         </CardContent>

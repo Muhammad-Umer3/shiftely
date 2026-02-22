@@ -14,19 +14,19 @@ export async function POST(
       return NextResponse.json({ message: 'Only managers can reject time-off requests' }, { status: 403 })
     }
 
-    const timeOff = await prisma.timeOffRequest.findFirst({
+    const leave = await prisma.employeeLeave.findFirst({
       where: { id, organizationId: user.organizationId },
     })
 
-    if (!timeOff) {
+    if (!leave) {
       return NextResponse.json({ message: 'Request not found' }, { status: 404 })
     }
 
-    if (timeOff.status !== 'PENDING') {
+    if (leave.status !== 'PENDING') {
       return NextResponse.json({ message: 'Request already processed' }, { status: 400 })
     }
 
-    await prisma.timeOffRequest.update({
+    await prisma.employeeLeave.update({
       where: { id },
       data: { status: 'REJECTED', approverId: user.id, respondedAt: new Date() },
     })

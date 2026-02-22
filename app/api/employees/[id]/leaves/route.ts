@@ -37,6 +37,7 @@ export async function GET(
     const leaves = await prisma.employeeLeave.findMany({
       where,
       orderBy: { startDate: 'asc' },
+      include: { approver: { select: { name: true, email: true } } },
     })
 
     return NextResponse.json({ leaves }, { status: 200 })
@@ -54,7 +55,7 @@ export async function POST(
     const user = await requireAuth()
     const { id } = await params
     const body = await req.json()
-    const { startDate, endDate, type, notes } = body
+    const { startDate, endDate, type, notes, status } = body
 
     if (!startDate || !endDate || !type) {
       return NextResponse.json(
@@ -69,6 +70,8 @@ export async function POST(
         { status: 400 }
       )
     }
+
+    const leaveStatus = status === 'PENDING' ? 'PENDING' : 'APPROVED'
 
     const start = new Date(startDate)
     const end = new Date(endDate)
@@ -98,7 +101,9 @@ export async function POST(
         endDate: end,
         type,
         notes: notes || null,
+        status: leaveStatus,
       },
+      include: { approver: { select: { name: true, email: true } } },
     })
 
     return NextResponse.json({ leave }, { status: 201 })

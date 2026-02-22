@@ -35,14 +35,14 @@ export function ScheduleChat({ scheduleId }: { scheduleId: string }) {
   const bottomRef = useRef<HTMLDivElement>(null)
   const lastSinceRef = useRef<string | null>(null)
 
-  const fetchMessages = async (since?: string) => {
+  const fetchMessages = async (since?: string): Promise<ChatMessage[]> => {
     const url = since
       ? `/api/schedules/${scheduleId}/chat?since=${encodeURIComponent(since)}`
       : `/api/schedules/${scheduleId}/chat?limit=50`
     const res = await fetch(url)
     if (!res.ok) return []
     const data = await res.json()
-    return data.messages ?? []
+    return (data.messages ?? []) as ChatMessage[]
   }
 
   useEffect(() => {
@@ -69,7 +69,7 @@ export function ScheduleChat({ scheduleId }: { scheduleId: string }) {
       if (!mounted || newOnes.length === 0) return
       setMessages((prev) => {
         const existingIds = new Set(prev.map((m) => m.id))
-        const added = newOnes.filter((m) => !existingIds.has(m.id))
+        const added = newOnes.filter((m: ChatMessage) => !existingIds.has(m.id))
         if (added.length === 0) return prev
         const next = [...prev, ...added].sort(
           (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
@@ -127,7 +127,7 @@ export function ScheduleChat({ scheduleId }: { scheduleId: string }) {
         if (newOnes.length > 0) {
           setMessages((prev) => {
             const existingIds = new Set(prev.map((m) => m.id))
-            const added = newOnes.filter((m) => !existingIds.has(m.id))
+            const added = newOnes.filter((m: ChatMessage) => !existingIds.has(m.id))
             const next = [...prev, ...added].sort(
               (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
             )
@@ -156,7 +156,7 @@ export function ScheduleChat({ scheduleId }: { scheduleId: string }) {
         if (newOnes.length > 0) {
           setMessages((prev) => {
             const existingIds = new Set(prev.map((m) => m.id))
-            const added = newOnes.filter((m) => !existingIds.has(m.id))
+            const added = newOnes.filter((m: ChatMessage) => !existingIds.has(m.id))
             const next = [...prev, ...added].sort(
               (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
             )

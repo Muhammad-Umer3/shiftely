@@ -24,6 +24,7 @@ type DisplaySettings = {
   workingDays: number[]
   displayGroupIds?: string[]
   shiftDefaults?: { minPeople?: number; maxPeople?: number }
+  slotDurationHours?: number
 }
 
 type Group = {
@@ -50,13 +51,14 @@ export function EditScheduleDialog({
   onSaved?: () => void
 }) {
   const router = useRouter()
-  const defaults = initialDisplaySettings ?? DEFAULT_DISPLAY
+  const defaults: DisplaySettings = initialDisplaySettings ?? DEFAULT_DISPLAY
   const [name, setName] = useState(initialName ?? '')
   const [includeSpecific, setIncludeSpecific] = useState(initialDisplayGroupIds.length > 0)
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set(initialDisplayGroupIds))
   const [startHour, setStartHour] = useState(defaults.startHour)
   const [endHour, setEndHour] = useState(defaults.endHour)
   const [workingDays, setWorkingDays] = useState<number[]>(defaults.workingDays)
+  const [slotDurationHours, setSlotDurationHours] = useState<number>(defaults.slotDurationHours ?? 1)
   const shiftDef = defaults.shiftDefaults
   const [minPeople, setMinPeople] = useState<number | ''>(shiftDef?.minPeople ?? '')
   const [maxPeople, setMaxPeople] = useState<number | ''>(shiftDef?.maxPeople ?? '')
@@ -75,10 +77,11 @@ export function EditScheduleDialog({
     setName(initialName ?? '')
     setIncludeSpecific(initialDisplayGroupIds.length > 0)
     setSelectedIds(new Set(initialDisplayGroupIds))
-    const d = initialDisplaySettings ?? DEFAULT_DISPLAY
+    const d: DisplaySettings = initialDisplaySettings ?? DEFAULT_DISPLAY
     setStartHour(d.startHour)
     setEndHour(d.endHour)
     setWorkingDays(Array.isArray(d.workingDays) ? d.workingDays : DEFAULT_DISPLAY.workingDays)
+    setSlotDurationHours([1, 2, 4].includes(Number(d.slotDurationHours)) ? Number(d.slotDurationHours) : 1)
     setMinPeople(d.shiftDefaults?.minPeople ?? '')
     setMaxPeople(d.shiftDefaults?.maxPeople ?? '')
   }, [initialName, initialDisplayGroupIds, initialDisplaySettings, open])
@@ -142,6 +145,7 @@ export function EditScheduleDialog({
               min !== undefined || max !== undefined
                 ? { minPeople: min, maxPeople: max }
                 : undefined,
+            slotDurationHours,
           },
         }),
       })
@@ -185,6 +189,20 @@ export function EditScheduleDialog({
               onChange={(e) => setName(e.target.value)}
               className="w-full border border-stone-200 rounded-lg px-3 py-2 text-stone-900 bg-white focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
             />
+          </div>
+
+          <div>
+            <label className="text-sm font-medium text-stone-700 block mb-1">Slot duration</label>
+            <select
+              value={slotDurationHours}
+              onChange={(e) => setSlotDurationHours(Number(e.target.value))}
+              className="w-full border border-stone-200 rounded-lg px-3 py-2 text-stone-900 bg-white focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
+            >
+              <option value={1}>1 hour</option>
+              <option value={2}>2 hours</option>
+              <option value={4}>4 hours</option>
+            </select>
+            <p className="text-xs text-stone-500 mt-1">Length of each shift when dragging onto the calendar</p>
           </div>
 
           <div>

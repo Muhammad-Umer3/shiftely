@@ -12,7 +12,7 @@ export async function PATCH(
     const body = await req.json()
     const { name, displaySettings } = body
 
-    const updateData: { name?: string; displaySettings?: { startHour: number; endHour: number; workingDays: number[]; displayGroupIds?: string[]; shiftDefaults?: { minPeople?: number; maxPeople?: number } } | null } = {}
+    const updateData: { name?: string; displaySettings?: { startHour: number; endHour: number; workingDays: number[]; displayGroupIds?: string[]; shiftDefaults?: { minPeople?: number; maxPeople?: number }; slotDurationHours?: number } | null } = {}
     if (typeof name === 'string') updateData.name = name
     if (displaySettings !== undefined) {
       if (displaySettings === null) {
@@ -23,6 +23,9 @@ export async function PATCH(
         Array.isArray(displaySettings?.workingDays)
       ) {
         const shiftDef = displaySettings?.shiftDefaults
+        const slotDurationHours = [1, 2, 4].includes(Number(displaySettings?.slotDurationHours))
+          ? Number(displaySettings.slotDurationHours)
+          : undefined
         updateData.displaySettings = {
           startHour: displaySettings.startHour,
           endHour: displaySettings.endHour,
@@ -35,6 +38,7 @@ export async function PATCH(
                   maxPeople: typeof shiftDef.maxPeople === 'number' ? shiftDef.maxPeople : undefined,
                 }
               : undefined,
+          ...(slotDurationHours !== undefined && { slotDurationHours }),
         }
       }
     }

@@ -34,9 +34,11 @@ export type Group = {
 export function DraggableGroup({
   group,
   disabled,
+  employeeAvailability,
 }: {
   group: Group
   disabled?: boolean
+  employeeAvailability?: Record<string, { consumed: number; available: number }>
 }) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: groupDragId(group.id),
@@ -62,14 +64,19 @@ export function DraggableGroup({
         <span className="text-xs text-stone-500 shrink-0">({group.members.length})</span>
       </div>
       <div className="border-t border-amber-200/60 bg-white/50 pl-2 pr-1 py-1 space-y-0.5">
-        {group.members.map(({ employee }) => (
-          <DraggableEmployee
-            key={employee.id}
-            employee={employee}
-            disabled={disabled}
-            groupId={group.id}
-          />
-        ))}
+        {group.members.map(({ employee }) => {
+          const avail = employeeAvailability?.[employee.id]
+          return (
+            <DraggableEmployee
+              key={employee.id}
+              employee={employee}
+              disabled={disabled}
+              groupId={group.id}
+              hoursConsumed={avail?.consumed}
+              hoursAvailable={avail?.available}
+            />
+          )
+        })}
       </div>
     </div>
   )

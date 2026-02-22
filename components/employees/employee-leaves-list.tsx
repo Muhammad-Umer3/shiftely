@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 
-type Leave = { id: string; startDate: string; endDate: string; type: string; notes: string | null }
+type Leave = { id: string; startDate: string; endDate: string; type: string; notes: string | null; status?: string }
 
 const LEAVE_TYPE_LABELS: Record<string, string> = {
   vacation: 'Vacation',
@@ -79,6 +79,9 @@ export function EmployeeLeavesList({ employeeId, onDelete }: { employeeId: strin
             </p>
             <p className="text-sm text-stone-600">
               {LEAVE_TYPE_LABELS[leave.type] || leave.type}
+              {leave.status && leave.status !== 'APPROVED' && (
+                <span className={leave.status === 'PENDING' ? 'text-amber-600' : 'text-red-600'}> · {leave.status}</span>
+              )}
               {leave.notes && ` · ${leave.notes}`}
             </p>
           </div>

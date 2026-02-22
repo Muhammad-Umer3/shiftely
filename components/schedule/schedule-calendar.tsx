@@ -83,6 +83,7 @@ export type TimeOffEntry = {
   endDate: string
   type: string
   notes: string | null
+  status?: string
 }
 
 export type TimeOffByEmployee = Record<
@@ -102,6 +103,8 @@ export function ScheduleCalendar({
   workingDays = [1, 2, 3, 4, 5],
   canEdit = true,
   timeOffByEmployee = {},
+  employeeHoursAvailable = {},
+  slotDurationHours = 1,
 }: {
   schedule: Schedule
   employees: Employee[]
@@ -114,6 +117,8 @@ export function ScheduleCalendar({
   workingDays?: number[]
   canEdit?: boolean
   timeOffByEmployee?: TimeOffByEmployee
+  employeeHoursAvailable?: Record<string, number>
+  slotDurationHours?: number
 }) {
   const [activeId, setActiveId] = useState<string | null>(null)
   const [activeGroup, setActiveGroup] = useState<Group | null>(null)
@@ -205,7 +210,7 @@ export function ScheduleCalendar({
     startTime.setHours(hours, minutes, 0, 0)
 
     const endTime = new Date(startTime)
-    endTime.setHours(hours + 1, minutes, 0, 0)
+    endTime.setHours(hours + slotDurationHours, minutes, 0, 0)
 
     // Dragging group -> create shifts for all members
     if (isGroupDragId(String(active.id))) {
@@ -446,6 +451,13 @@ export function ScheduleCalendar({
     6: 'Sat',
   }
 
+  const employeeAvailability: Record<string, { consumed: number; available: number }> = {}
+  employees.forEach((emp) => {
+    const available = employeeHoursAvailable[emp.id] ?? 40
+    const consumed = employeeHours[emp.id] ?? 0
+    employeeAvailability[emp.id] = { consumed, available }
+  })
+
   return (
     <TooltipProvider delayDuration={400}>
     <DndContext collisionDetection={closestCenter} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
@@ -474,6 +486,7 @@ export function ScheduleCalendar({
                   key={group.id}
                   group={group}
                   disabled={!canEdit}
+                  employeeAvailability={employeeAvailability}
                 />
               ))}
             </div>
@@ -519,6 +532,7 @@ export function ScheduleCalendar({
             shiftWarnings={shiftWarnings}
             startHour={startHour}
             endHour={endHour}
+            slotDurationHours={slotDurationHours}
             canEdit={canEdit}
             timeOffByEmployee={timeOffByEmployee}
           />

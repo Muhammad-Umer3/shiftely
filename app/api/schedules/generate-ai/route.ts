@@ -69,8 +69,8 @@ export async function POST(req: NextRequest) {
       throw new Error('No users found in organization')
     }
 
-    const displaySettings = schedule.displaySettings as { shiftDefaults?: { minPeople?: number; maxPeople?: number } } | null
-    const shiftDef = displaySettings?.shiftDefaults
+    const scheduleDisplayOpts = schedule.displaySettings as { shiftDefaults?: { minPeople?: number; maxPeople?: number } } | null
+    const shiftDef = scheduleDisplayOpts?.shiftDefaults
     const slotMinCount = shiftDef?.minPeople != null ? Math.max(1, shiftDef.minPeople) : undefined
     const slotMaxCount = shiftDef?.maxPeople != null ? Math.max(1, shiftDef.maxPeople) : undefined
 
