@@ -25,6 +25,7 @@ type DisplaySettings = {
 
 type ScheduleWithShifts = {
   id: string
+  slug?: string | null
   name: string | null
   weekStartDate: Date
   status: string
@@ -127,7 +128,7 @@ export function SchedulesList({
                       >
                         <td className="py-3 px-4">
                           <Link
-                            href={`/schedules/${s.id}`}
+                            href={`/schedules/${s.slug ?? s.id}`}
                             className="font-medium text-stone-900 hover:text-amber-600 truncate block max-w-[180px]"
                           >
                             {displayName}
@@ -177,7 +178,7 @@ export function SchedulesList({
                                 Edit schedule
                               </Button>
                             )}
-                            <Link href={`/schedules/${s.id}`}>
+                            <Link href={`/schedules/${s.slug ?? s.id}`}>
                               <Button
                                 variant="ghost"
                                 size="sm"

@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { Playfair_Display, DM_Sans } from 'next/font/google'
 import './globals.css'
 import { SessionProvider } from '@/components/providers/session-provider'
+import { NotFoundProvider } from '@/components/providers/not-found-provider'
 import { Toaster } from '@/components/ui/toast'
 import { ContactFloatButton } from '@/components/landing/contact-float-button'
 import { Analytics } from '@vercel/analytics/next'
@@ -70,6 +71,14 @@ const faqJsonLd = {
   '@context': 'https://schema.org',
   '@type': 'FAQPage',
   mainEntity: [
+    {
+      '@type': 'Question',
+      name: 'How much does Shiftely cost?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Free: up to 5 employees and 1 active schedule—no card required. Growth: $29/mo for up to 15 employees and unlimited schedules, plus shift swaps. Pro: $79/mo for up to 100 employees, custom roles, and priority support. Paid plans include a 7-day free trial.',
+      },
+    },
     {
       '@type': 'Question',
       name: "I'm drowning in spreadsheets and last-minute changes. Will this actually help?",
@@ -151,8 +160,10 @@ export default function RootLayout({
         />
       </head>
       <body className="font-sans bg-stone-950 text-stone-50 antialiased">
-        <SessionProvider>{children}</SessionProvider>
-        <ContactFloatButton />
+        <NotFoundProvider>
+          <SessionProvider>{children}</SessionProvider>
+          <ContactFloatButton />
+        </NotFoundProvider>
         <Toaster />
         <Analytics />
       </body>

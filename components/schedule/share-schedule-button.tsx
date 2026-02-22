@@ -7,15 +7,18 @@ import { toast } from 'sonner'
 
 export function ShareScheduleButton({
   scheduleId,
+  slug,
   employeeId,
 }: {
   scheduleId: string
+  slug?: string | null
   employeeId?: string | null
 }) {
   const [copied, setCopied] = useState(false)
+  const publicId = slug ?? scheduleId
 
   const copyLink = (includeEmployee = false) => {
-    const path = includeEmployee && employeeId ? `/p/${scheduleId}?employee=${employeeId}` : `/p/${scheduleId}`
+    const path = includeEmployee && employeeId ? `/p/${publicId}?employee=${employeeId}` : `/p/${publicId}`
     const url = `${typeof window !== 'undefined' ? window.location.origin : ''}${path}`
     navigator.clipboard.writeText(url).then(
       () => {

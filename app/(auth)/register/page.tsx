@@ -11,12 +11,17 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Sparkles } from 'lucide-react'
 import { toast } from 'sonner'
+import { isPersonalEmailDomain, organizationNameFromEmail } from '@/lib/email-domain'
 
 const registerSchema = z.object({
-  email: z.string().email('Invalid email address'),
+  email: z
+    .string()
+    .email('Invalid email address')
+    .refine((email) => !isPersonalEmailDomain(email), {
+      message: 'Please use a work or organization email.',
+    }),
   password: z.string().min(8, 'Password must be at least 8 characters'),
   name: z.string().min(1, 'Name is required'),
-  organizationName: z.string().min(1, 'Organization name is required'),
 })
 
 type RegisterFormData = z.infer<typeof registerSchema>
@@ -29,10 +34,15 @@ export default function RegisterPage() {
   const {
     register,
     handleSubmit,
+    watch,
     formState: { errors },
   } = useForm<RegisterFormData>({
     resolver: zodResolver(registerSchema),
   })
+
+  const email = watch('email', '')
+  const derivedOrgName =
+    email && !isPersonalEmailDomain(email) ? organizationNameFromEmail(email) : null
 
   const onSubmit = async (data: RegisterFormData) => {
     setIsLoading(true)
@@ -42,7 +52,7 @@ export default function RegisterPage() {
       const response = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
+        body: JSON.stringify({ email: data.email, password: data.password, name: data.name }),
       })
 
       const result = await response.json()
@@ -103,7 +113,7 @@ export default function RegisterPage() {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="email" className="text-stone-300">Email</Label>
+            <Label htmlFor="email" className="text-stone-300">Work email</Label>
             <Input
               id="email"
               type="email"
@@ -114,19 +124,10 @@ export default function RegisterPage() {
             {errors.email && (
               <p className="text-sm text-red-400">{errors.email.message}</p>
             )}
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="organizationName" className="text-stone-300">Organization Name</Label>
-            <Input
-              id="organizationName"
-              type="text"
-              placeholder="Acme Inc."
-              className="h-12 bg-stone-900/50 border-stone-700 text-white placeholder:text-stone-500 focus-visible:ring-amber-500/50 focus-visible:border-amber-500/50"
-              {...register('organizationName')}
-            />
-            {errors.organizationName && (
-              <p className="text-sm text-red-400">{errors.organizationName.message}</p>
+            {derivedOrgName && (
+              <p className="text-xs text-stone-500">
+                Your organization will be set to <span className="text-stone-400 font-medium">{derivedOrgName}</span> based on your email.
+              </p>
             )}
           </div>
 

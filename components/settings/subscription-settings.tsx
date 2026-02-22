@@ -6,6 +6,7 @@ import { SUBSCRIPTION_TIERS } from '@/lib/subscription-tiers'
 import { useState } from 'react'
 import { Check } from 'lucide-react'
 import { toast } from 'sonner'
+import Link from 'next/link'
 import { BillingHistory } from './billing-history'
 import {
   Dialog,
@@ -18,35 +19,38 @@ import {
 
 export function SubscriptionSettings({
   currentTier,
+  subscriptionTier,
+  trialEndsAt,
+  isTrialing,
   organizationId,
 }: {
   currentTier: string
+  subscriptionTier?: string
+  trialEndsAt?: Date | null
+  isTrialing?: boolean
   organizationId: string
 }) {
-  const [loading, setLoading] = useState<string | null>(null)
   const [showCancelDialog, setShowCancelDialog] = useState(false)
   const [cancelling, setCancelling] = useState(false)
+  const [billingPortalLoading, setBillingPortalLoading] = useState(false)
 
-  const handleSubscribe = async (tier: keyof typeof SUBSCRIPTION_TIERS) => {
-    setLoading(tier)
+  const hasPaidPlan = (subscriptionTier ?? currentTier) !== 'FREE'
+  const showUpgradeCta = isTrialing || currentTier === 'FREE'
+
+  const handleManageBilling = async () => {
+    setBillingPortalLoading(true)
     try {
-      const response = await fetch('/api/stripe/create-checkout', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tier }),
-      })
-
+      const response = await fetch('/api/stripe/billing-portal', { method: 'POST' })
       const data = await response.json()
-
       if (data.url) {
         window.location.href = data.url
       } else {
-        toast.error('Failed to create checkout session')
+        toast.error(data.message || 'Failed to open billing portal')
       }
-    } catch (error) {
+    } catch {
       toast.error('An error occurred')
     } finally {
-      setLoading(null)
+      setBillingPortalLoading(false)
     }
   }
 
@@ -73,10 +77,22 @@ export function SubscriptionSettings({
     }
   }
 
+  const currentPlanName = SUBSCRIPTION_TIERS[currentTier as keyof typeof SUBSCRIPTION_TIERS]?.name || currentTier
+
   return (
     <div className="space-y-4">
+      {isTrialing && trialEndsAt && (
+        <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+          You&apos;re on a Pro trial with full access until{' '}
+          {new Date(trialEndsAt).toLocaleDateString()}. Choose a plan before then to keep your features.
+        </div>
+      )}
+
       <div>
-        <p className="text-sm font-medium mb-2">Current Plan: {SUBSCRIPTION_TIERS[currentTier as keyof typeof SUBSCRIPTION_TIERS]?.name || currentTier}</p>
+        <p className="text-sm font-medium mb-2">
+          Current Plan: {currentPlanName}
+          {isTrialing && ' (Trial)'}
+        </p>
       </div>
 
       <div className="grid gap-4 md:grid-cols-3 max-w-5xl">
@@ -104,22 +120,32 @@ export function SubscriptionSettings({
                     ))}
                   </ul>
                 </div>
-                <Button
-                  className="w-full"
-                  variant={isCurrent ? 'outline' : 'default'}
-                  onClick={() => handleSubscribe(tier)}
-                  disabled={isCurrent || loading !== null}
-                >
-                  {isCurrent ? 'Current Plan' : loading === tier ? 'Processing...' : 'Subscribe'}
-                </Button>
+                {isCurrent && (
+                  <p className="text-sm font-medium text-muted-foreground">Current plan</p>
+                )}
               </CardContent>
             </Card>
           )
         })}
       </div>
 
-      {currentTier !== 'FREE' && (
-        <div className="mt-6">
+      {showUpgradeCta && (
+        <div>
+          <Button asChild>
+            <Link href="/settings/plan">Choose your plan</Link>
+          </Button>
+        </div>
+      )}
+
+      {hasPaidPlan && (
+        <div className="mt-6 flex gap-2">
+          <Button
+            variant="outline"
+            onClick={handleManageBilling}
+            disabled={billingPortalLoading}
+          >
+            {billingPortalLoading ? 'Opening...' : 'Manage billing'}
+          </Button>
           <Button
             variant="destructive"
             onClick={() => setShowCancelDialog(true)}

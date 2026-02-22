@@ -12,7 +12,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { toast } from 'sonner'
-import { UsersRound, Search } from 'lucide-react'
+import { UsersRound, Search, Lock } from 'lucide-react'
 import { cn } from '@/lib/utils/cn'
 
 const DAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
@@ -23,6 +23,7 @@ type DisplaySettings = {
   endHour: number
   workingDays: number[]
   displayGroupIds?: string[]
+  shiftDefaults?: { minPeople?: number; maxPeople?: number }
 }
 
 type Group = {
@@ -56,6 +57,9 @@ export function EditScheduleDialog({
   const [startHour, setStartHour] = useState(defaults.startHour)
   const [endHour, setEndHour] = useState(defaults.endHour)
   const [workingDays, setWorkingDays] = useState<number[]>(defaults.workingDays)
+  const shiftDef = defaults.shiftDefaults
+  const [minPeople, setMinPeople] = useState<number | ''>(shiftDef?.minPeople ?? '')
+  const [maxPeople, setMaxPeople] = useState<number | ''>(shiftDef?.maxPeople ?? '')
   const [groups, setGroups] = useState<Group[]>([])
   const [groupSearch, setGroupSearch] = useState('')
   const [loading, setLoading] = useState(false)
@@ -75,6 +79,8 @@ export function EditScheduleDialog({
     setStartHour(d.startHour)
     setEndHour(d.endHour)
     setWorkingDays(Array.isArray(d.workingDays) ? d.workingDays : DEFAULT_DISPLAY.workingDays)
+    setMinPeople(d.shiftDefaults?.minPeople ?? '')
+    setMaxPeople(d.shiftDefaults?.maxPeople ?? '')
   }, [initialName, initialDisplayGroupIds, initialDisplaySettings, open])
 
   useEffect(() => {
@@ -117,17 +123,9 @@ export function EditScheduleDialog({
     }
   }
 
-  const toggleDay = (day: number) => {
-    setWorkingDays((prev) =>
-      prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day].sort((a, b) => a - b)
-    )
-  }
-
   const handleSave = async () => {
-    if (startHour >= endHour) {
-      toast.error('Start hour must be before end hour')
-      return
-    }
+    const min = minPeople === '' ? undefined : Number(minPeople)
+    const max = maxPeople === '' ? undefined : Number(maxPeople)
     setSaving(true)
     try {
       const res = await fetch(`/api/schedules/${scheduleId}`, {
@@ -140,6 +138,10 @@ export function EditScheduleDialog({
             endHour,
             workingDays,
             displayGroupIds: includeSpecific ? Array.from(selectedIds) : [],
+            shiftDefaults:
+              min !== undefined || max !== undefined
+                ? { minPeople: min, maxPeople: max }
+                : undefined,
           },
         }),
       })
@@ -168,6 +170,12 @@ export function EditScheduleDialog({
           <DialogTitle>Edit schedule</DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
+          <div className="rounded-lg border border-amber-200 bg-amber-50/80 px-3 py-2.5 flex gap-2 text-sm text-amber-900">
+            <Lock className="h-4 w-4 shrink-0 mt-0.5 text-amber-600" />
+            <p>
+              Display hours and min/max people per shift cannot be changed after the schedule is created.
+            </p>
+          </div>
           <div>
             <label className="text-sm font-medium text-stone-700 block mb-1">Name</label>
             <input
@@ -259,38 +267,45 @@ export function EditScheduleDialog({
             )}
           </div>
 
-          <div>
-            <Label className="text-sm font-medium text-stone-700 block mb-2">Display settings</Label>
-            <p className="text-xs text-stone-500 mb-2">Hours and days shown in the schedule grid</p>
-            <div className="flex items-center gap-2 mb-3">
+          <div className="rounded-lg border border-stone-200 bg-stone-50/50 p-3 space-y-2">
+            <Label className="text-sm font-medium text-stone-700 block">People per shift</Label>
+            <p className="text-xs text-stone-500">
+              Min/max people cannot be changed after creation.
+            </p>
+            <div className="flex items-center gap-3">
+              <div className="flex-1">
+                <Label className="text-xs text-stone-600">Min people</Label>
+                <div className="mt-1 border border-stone-200 rounded-lg px-3 py-2 text-stone-600 bg-stone-100/80">
+                  {minPeople === '' ? '—' : minPeople}
+                </div>
+              </div>
+              <div className="flex-1">
+                <Label className="text-xs text-stone-600">Max people</Label>
+                <div className="mt-1 border border-stone-200 rounded-lg px-3 py-2 text-stone-600 bg-stone-100/80">
+                  {maxPeople === '' ? '—' : maxPeople}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="rounded-lg border border-stone-200 bg-stone-50/50 p-3 space-y-2">
+            <Label className="text-sm font-medium text-stone-700 block">Display hours & days</Label>
+            <p className="text-xs text-stone-500">
+              Hours and working days cannot be changed after creation.
+            </p>
+            <div className="flex items-center gap-2 mb-2">
               <div>
                 <Label className="text-xs text-stone-600">Start</Label>
-                <select
-                  className="w-full mt-1 border border-stone-200 rounded-lg px-3 py-2 text-stone-900 bg-white"
-                  value={startHour}
-                  onChange={(e) => setStartHour(parseInt(e.target.value, 10))}
-                >
-                  {Array.from({ length: 24 }, (_, i) => (
-                    <option key={i} value={i}>
-                      {i === 0 ? '12 AM' : i < 12 ? `${i} AM` : i === 12 ? '12 PM' : `${i - 12} PM`}
-                    </option>
-                  ))}
-                </select>
+                <div className="mt-1 border border-stone-200 rounded-lg px-3 py-2 text-stone-600 bg-stone-100/80 w-24">
+                  {startHour === 0 ? '12 AM' : startHour < 12 ? `${startHour} AM` : startHour === 12 ? '12 PM' : `${startHour - 12} PM`}
+                </div>
               </div>
-              <span className="pt-5">to</span>
+              <span className="pt-5 text-stone-500">to</span>
               <div>
                 <Label className="text-xs text-stone-600">End</Label>
-                <select
-                  className="w-full mt-1 border border-stone-200 rounded-lg px-3 py-2 text-stone-900 bg-white"
-                  value={endHour}
-                  onChange={(e) => setEndHour(parseInt(e.target.value, 10))}
-                >
-                  {Array.from({ length: 24 }, (_, i) => (
-                    <option key={i} value={i}>
-                      {i === 0 ? '12 AM' : i < 12 ? `${i} AM` : i === 12 ? '12 PM' : `${i - 12} PM`}
-                    </option>
-                  ))}
-                </select>
+                <div className="mt-1 border border-stone-200 rounded-lg px-3 py-2 text-stone-600 bg-stone-100/80 w-24">
+                  {endHour === 0 ? '12 AM' : endHour < 12 ? `${endHour} AM` : endHour === 12 ? '12 PM' : `${endHour - 12} PM`}
+                </div>
               </div>
             </div>
             <div className="flex flex-wrap gap-2">
@@ -298,16 +313,15 @@ export function EditScheduleDialog({
                 const day = i
                 const isOn = workingDays.includes(day)
                 return (
-                  <button
+                  <span
                     key={day}
-                    type="button"
-                    onClick={() => toggleDay(day)}
-                    className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                      isOn ? 'bg-amber-500 text-stone-950' : 'bg-stone-100 text-stone-500 hover:bg-stone-200'
-                    }`}
+                    className={cn(
+                      'px-3 py-2 rounded-lg text-sm font-medium',
+                      isOn ? 'bg-amber-200/60 text-stone-800' : 'bg-stone-100 text-stone-400'
+                    )}
                   >
                     {label}
-                  </button>
+                  </span>
                 )
               })}
             </div>

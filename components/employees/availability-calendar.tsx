@@ -1,8 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
+import { toast } from 'sonner'
 
 const daysOfWeek = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
 const timeSlots = [
@@ -25,8 +25,32 @@ const timeSlots = [
   '10:00 PM',
 ]
 
-export function AvailabilityCalendar({ employeeId }: { employeeId: string }) {
+type Props =
+  | { employeeId: string; useSelf?: false }
+  | { employeeId?: string; useSelf: true }
+
+export function AvailabilityCalendar(props: Props) {
+  const { employeeId, useSelf = false } = props
   const [availability, setAvailability] = useState<Record<string, string[]>>({})
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    if (useSelf) {
+      fetch('/api/me/availability')
+        .then((r) => r.json())
+        .then((data) => setAvailability(data.availability ?? {}))
+        .catch(() => {})
+        .finally(() => setLoading(false))
+    } else if (employeeId) {
+      fetch(`/api/employees/${employeeId}/availability`)
+        .then((r) => r.json())
+        .then((data) => setAvailability(data.availability ?? {}))
+        .catch(() => {})
+        .finally(() => setLoading(false))
+    } else {
+      setLoading(false)
+    }
+  }, [useSelf, employeeId])
 
   const toggleTimeSlot = (day: string, time: string) => {
     setAvailability((prev) => {
@@ -40,21 +64,27 @@ export function AvailabilityCalendar({ employeeId }: { employeeId: string }) {
   }
 
   const saveAvailability = async () => {
+    const url = useSelf ? '/api/me/availability' : `/api/employees/${employeeId}/availability`
     try {
-      const response = await fetch(`/api/employees/${employeeId}/availability`, {
+      const response = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ availability }),
       })
 
       if (response.ok) {
-        alert('Availability saved!')
+        toast.success('Availability saved!')
       } else {
-        alert('Failed to save availability')
+        const data = await response.json().catch(() => ({}))
+        toast.error(data.message || 'Failed to save availability')
       }
-    } catch (error) {
-      alert('An error occurred')
+    } catch {
+      toast.error('An error occurred')
     }
+  }
+
+  if (loading) {
+    return <p className="text-sm text-stone-500">Loading availability…</p>
   }
 
   return (

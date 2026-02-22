@@ -12,11 +12,16 @@ import { checkPermission } from '@/lib/utils/auth'
 export default async function EmployeesPage() {
   const user = await requirePermission(PERMISSIONS.EMPLOYEE_VIEW)
 
-  const employees = await prisma.employee.findMany({
+  const employeesRaw = await prisma.employee.findMany({
     where: { organizationId: user.organizationId },
     include: { user: true },
     orderBy: { createdAt: 'desc' },
   })
+
+  const employees = employeesRaw.map((e) => ({
+    ...e,
+    hourlyRate: e.hourlyRate != null ? Number(e.hourlyRate) : null,
+  }))
 
   let groups: Array<{
     id: string
@@ -26,7 +31,7 @@ export default async function EmployeesPage() {
     }>
   }> = []
   try {
-    groups = await prisma.employeeGroup.findMany({
+    const groupsRaw = await prisma.employeeGroup.findMany({
       where: { organizationId: user.organizationId },
       include: {
         members: {
@@ -39,6 +44,16 @@ export default async function EmployeesPage() {
       },
       orderBy: { name: 'asc' },
     })
+    groups = groupsRaw.map((g) => ({
+      id: g.id,
+      name: g.name,
+      members: g.members.map((m) => ({
+        employee: {
+          id: m.employee.id,
+          user: m.employee.user,
+        },
+      })),
+    }))
   } catch {
     groups = []
   }

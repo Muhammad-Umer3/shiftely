@@ -1,6 +1,6 @@
 /**
- * SMS notification service using Twilio.
- * Configure TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_PHONE_NUMBER in .env
+ * WhatsApp notification service using Twilio.
+ * Configure TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_WHATSAPP_NUMBER in .env
  */
 
 function getTwilioClient() {
@@ -24,13 +24,16 @@ function normalizePhone(phone: string | null | undefined): string | null {
   return digits.startsWith('+') ? phone : `+${digits}`
 }
 
-export class SmsService {
-  static async sendSms(to: string | null | undefined, body: string): Promise<boolean> {
+export class WhatsAppService {
+  static async sendWhatsApp(
+    to: string | null | undefined,
+    body: string
+  ): Promise<boolean> {
     const normalized = normalizePhone(to)
     if (!normalized) return false
 
     const client = getTwilioClient()
-    const from = process.env.TWILIO_PHONE_NUMBER
+    const from = process.env.TWILIO_WHATSAPP_NUMBER
     if (!client || !from) {
       return false
     }
@@ -38,12 +41,12 @@ export class SmsService {
     try {
       await client.messages.create({
         body,
-        from,
-        to: normalized,
+        from: `whatsapp:${from.replace(/^\s+|\s+$/g, '')}`,
+        to: `whatsapp:${normalized}`,
       })
       return true
     } catch (error) {
-      console.error('SMS send error:', error)
+      console.error('WhatsApp send error:', error)
       return false
     }
   }

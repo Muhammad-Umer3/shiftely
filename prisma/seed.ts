@@ -1,4 +1,6 @@
 import { PrismaClient } from '@prisma/client'
+import bcrypt from 'bcryptjs'
+import { addDays, setHours, startOfWeek } from 'date-fns'
 import {
   ALL_PERMISSIONS,
   PERMISSION_DESCRIPTIONS,
@@ -6,6 +8,9 @@ import {
 } from '../lib/permissions/permissions'
 
 const prisma = new PrismaClient()
+
+// Demo login password for all seeded users (e.g. admin@demo.shiftely.com). Document in README.
+const DEMO_PASSWORD = 'Demo123!'
 
 async function main() {
   console.log('Seeding permissions and roles...')
@@ -39,8 +44,134 @@ async function main() {
     console.log(`  ✓ ${permission}`)
   }
 
-  // 2. Get all organizations
-  const organizations = await prisma.organization.findMany()
+  // 2. Get all organizations; if none exist, create demo org + users + employees (and optional groups/schedule)
+  let organizations = await prisma.organization.findMany()
+
+  if (organizations.length === 0) {
+    console.log('\nNo organizations found. Creating demo organization and users...')
+    const passwordHash = await bcrypt.hash(DEMO_PASSWORD, 10)
+
+    const demoOrg = await prisma.organization.create({
+      data: {
+        name: 'Shiftely Demo',
+        subscriptionTier: 'FREE',
+        settings: {},
+      },
+    })
+
+    const demoUsers: Array<{
+      email: string
+      name: string
+      role: 'ADMIN' | 'MANAGER' | 'EMPLOYEE'
+      roleType?: string
+      hourlyRate?: number
+    }> = [
+      { email: 'admin@demo.shiftely.com', name: 'Demo Admin', role: 'ADMIN' },
+      { email: 'manager@demo.shiftely.com', name: 'Demo Manager', role: 'MANAGER' },
+      { email: 'employee1@demo.shiftely.com', name: 'Alex Employee', role: 'EMPLOYEE', roleType: 'Server', hourlyRate: 18.5 },
+      { email: 'employee2@demo.shiftely.com', name: 'Sam Employee', role: 'EMPLOYEE', roleType: 'Host', hourlyRate: 16 },
+      { email: 'employee3@demo.shiftely.com', name: 'Jordan Employee', role: 'EMPLOYEE', roleType: 'Server', hourlyRate: 18.5 },
+    ]
+
+    const createdEmployees: { userId: string; employeeId: string }[] = []
+
+    for (const u of demoUsers) {
+      const user = await prisma.user.create({
+        data: {
+          email: u.email,
+          name: u.name,
+          passwordHash,
+          role: u.role,
+          organizationId: demoOrg.id,
+          emailVerified: true,
+          emailVerifiedAt: new Date(),
+          employee: {
+            create: {
+              organizationId: demoOrg.id,
+              roleType: u.roleType ?? null,
+              hourlyRate: u.hourlyRate ?? null,
+            },
+          },
+        },
+        include: { employee: true },
+      })
+      if (user.employee) {
+        createdEmployees.push({ userId: user.id, employeeId: user.employee.id })
+      }
+      console.log(`  ✓ Created ${u.role.toLowerCase()} ${u.email}`)
+    }
+
+    // Employee groups for demo
+    const frontOfHouse = await prisma.employeeGroup.create({
+      data: { name: 'Front of House', organizationId: demoOrg.id },
+    })
+    const backOffice = await prisma.employeeGroup.create({
+      data: { name: 'Back Office', organizationId: demoOrg.id },
+    })
+    const adminUser = await prisma.user.findFirst({
+      where: { organizationId: demoOrg.id, role: 'ADMIN' },
+      include: { employee: true },
+    })
+    const employeeIds = createdEmployees.map((e) => e.employeeId)
+    await prisma.employeeGroupMember.createMany({
+      data: [
+        { groupId: frontOfHouse.id, employeeId: employeeIds[2]! },
+        { groupId: frontOfHouse.id, employeeId: employeeIds[3]! },
+        { groupId: backOffice.id, employeeId: employeeIds[3]! },
+        { groupId: backOffice.id, employeeId: employeeIds[4]! },
+      ],
+    })
+    console.log('  ✓ Created groups: Front of House, Back Office')
+
+    // One week schedule with slots and assignments
+    if (adminUser?.employee) {
+      const weekStart = startOfWeek(new Date(), { weekStartsOn: 1 })
+      const schedule = await prisma.schedule.create({
+        data: {
+          organizationId: demoOrg.id,
+          type: 'WEEK',
+          weekStartDate: weekStart,
+          name: 'Demo Week',
+          status: 'DRAFT',
+          createdById: adminUser.id,
+        },
+      })
+      const slotData = [
+        { dayOffset: 0, startHour: 9, endHour: 17 },
+        { dayOffset: 1, startHour: 9, endHour: 17 },
+        { dayOffset: 2, startHour: 14, endHour: 22 },
+        { dayOffset: 3, startHour: 9, endHour: 17 },
+      ]
+      for (let i = 0; i < slotData.length; i++) {
+        const { dayOffset, startHour, endHour } = slotData[i]!
+        const day = addDays(weekStart, dayOffset)
+        const startTime = setHours(day, startHour)
+        const endTime = setHours(day, endHour)
+        const slot = await prisma.slot.create({
+          data: {
+            organizationId: demoOrg.id,
+            scheduleId: schedule.id,
+            startTime,
+            endTime,
+            requiredCount: 1,
+            status: 'SCHEDULED',
+            createdById: adminUser.id,
+          },
+        })
+        const assignEmployeeId = employeeIds[i % employeeIds.length]!
+        await prisma.slotAssignment.create({
+          data: {
+            slotId: slot.id,
+            employeeId: assignEmployeeId,
+            slotIndex: 0,
+          },
+        })
+      }
+      console.log('  ✓ Created demo schedule with 4 slots and assignments')
+    }
+
+    organizations = await prisma.organization.findMany()
+  }
 
   console.log(`\nCreating default roles for ${organizations.length} organization(s)...`)
 

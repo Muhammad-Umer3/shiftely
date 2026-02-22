@@ -48,7 +48,7 @@ export function GenerateWithAIDialog({
         onOpenChange(false)
         onGenerated?.()
         if (data.schedule?.id) {
-          router.push(`/schedules/${data.schedule.id}`)
+          router.push(`/schedules/${data.schedule.slug ?? data.schedule.id}`)
         }
         router.refresh()
       } else if (res.status === 409) {

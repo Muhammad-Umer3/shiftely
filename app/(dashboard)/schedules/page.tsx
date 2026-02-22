@@ -44,10 +44,14 @@ export default async function SchedulesPage({ searchParams }: PageProps) {
     },
   })
 
-  const employees = await prisma.employee.findMany({
+  const employeesRaw = await prisma.employee.findMany({
     where: { organizationId: user.organizationId },
     include: { user: true },
   })
+  const employees = employeesRaw.map((e) => ({
+    ...e,
+    hourlyRate: e.hourlyRate != null ? Number(e.hourlyRate) : null,
+  }))
 
   const org = await prisma.organization.findUnique({
     where: { id: user.organizationId },
@@ -88,12 +92,21 @@ export default async function SchedulesPage({ searchParams }: PageProps) {
       'workingDays' in row.displaySettings
         ? (row.displaySettings as { startHour: number; endHour: number; workingDays: number[] })
         : null
-    const scheduleShifts = s.slots.map((slot) => ({
-      shift: {
-        employeeId: slot.assignments[0]?.employeeId ?? null,
-        employee: slot.assignments[0]?.employee ?? null,
-      },
-    }))
+    const scheduleShifts = s.slots.map((slot) => {
+      const emp = slot.assignments[0]?.employee
+      return {
+        shift: {
+          employeeId: slot.assignments[0]?.employeeId ?? null,
+          employee: emp
+            ? {
+                id: emp.id,
+                user: emp.user,
+                hourlyRate: emp.hourlyRate != null ? Number(emp.hourlyRate) : null,
+              }
+            : null,
+        },
+      }
+    })
     return { ...row, displaySettings, scheduleShifts }
   })
 

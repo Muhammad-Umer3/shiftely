@@ -3,12 +3,17 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { MessageCircle } from 'lucide-react'
+import { useNotFound } from '@/components/providers/not-found-provider'
 
 const HIDE_PATHS = ['/contact', '/schedules', '/schedule', '/employees', '/swaps', '/time-off', '/settings', '/onboarding', '/help']
 
 export function ContactFloatButton() {
   const pathname = usePathname()
-  const isHidden = pathname === '/contact' || HIDE_PATHS.some((p) => pathname?.startsWith(p))
+  const notFound = useNotFound()
+  const isHidden =
+    notFound?.isNotFound ||
+    pathname === '/contact' ||
+    HIDE_PATHS.some((p) => pathname?.startsWith(p))
   if (isHidden) return null
 
   return (

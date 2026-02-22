@@ -54,12 +54,21 @@ A modern, full-stack SaaS application for small businesses to manage employee sh
    npx prisma db push
    ```
 
-5. Run the development server:
+5. (Optional) Seed demo data. If the database has no organizations, this creates a demo org with users and sample schedule:
+   ```bash
+   npm run db:seed
+   ```
+   **Demo login** (all use password `Demo123!`):
+   - Admin: `admin@demo.shiftely.com`
+   - Manager: `manager@demo.shiftely.com`
+   - Employees: `employee1@demo.shiftely.com`, `employee2@demo.shiftely.com`, `employee3@demo.shiftely.com`
+
+6. Run the development server:
    ```bash
    npm run dev
    ```
 
-6. Open [http://localhost:3000](http://localhost:3000)
+7. Open [http://localhost:3000](http://localhost:3000)
 
 ## Project Structure
 
@@ -113,15 +122,15 @@ shiftoo/
 - Payroll CSV export
 
 ### Notifications
-- Email notifications for schedule changes
+- Email and WhatsApp notifications for schedule changes and shift swaps
 - Daily schedule emails
 - Shift swap notifications
 
 ## Subscription Tiers
 
-- **Starter** ($19/month): Up to 10 employees
-- **Growth** ($39/month): Up to 25 employees
-- **Pro** ($69/month): Up to 50 employees
+- **Free** ($0): Up to 5 employees, 1 active schedule
+- **Growth** ($29/month): Up to 15 employees, unlimited schedules
+- **Pro** ($79/month): Up to 100 employees, custom roles, priority support
 
 ## License
 

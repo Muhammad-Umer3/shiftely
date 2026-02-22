@@ -22,6 +22,12 @@ export async function POST(req: NextRequest) {
     if (!schedule) {
       return NextResponse.json({ message: 'Schedule not found' }, { status: 404 })
     }
+    const displaySettings = schedule.displaySettings as { shiftDefaults?: { minPeople?: number; maxPeople?: number } } | null
+    const shiftDef = displaySettings?.shiftDefaults
+    const maxCount = shiftDef?.maxPeople != null ? Math.max(1, shiftDef.maxPeople) : Math.max(1, requiredCount)
+    const minCount = shiftDef?.minPeople != null ? Math.max(1, Math.min(shiftDef.minPeople, maxCount)) : undefined
+    const slotMaxCount = shiftDef?.maxPeople != null ? maxCount : undefined
+    const slotMinCount = shiftDef?.minPeople != null ? minCount : undefined
 
     if (employeeId) {
       const emp = await prisma.employee.findFirst({
@@ -62,6 +68,8 @@ export async function POST(req: NextRequest) {
         endTime: new Date(endTime),
         position: position || null,
         requiredCount: Math.max(1, requiredCount),
+        minCount: slotMinCount,
+        maxCount: slotMaxCount,
         createdById: user.id,
       },
       include: {

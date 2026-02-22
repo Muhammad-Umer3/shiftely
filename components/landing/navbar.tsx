@@ -3,13 +3,11 @@
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
 import { useState, useEffect } from 'react'
-import { Menu, X, Sparkles, Bell } from 'lucide-react'
-import { ShowInterestDialog } from '@/components/landing/show-interest-dialog'
+import { Menu, X, Sparkles } from 'lucide-react'
 
 export function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
-  const [showInterestOpen, setShowInterestOpen] = useState(false)
 
   useEffect(() => {
     const handleScroll = () => {
@@ -43,7 +41,7 @@ export function Navbar() {
               href="/#problems" 
               className="text-sm font-medium text-stone-400 hover:text-amber-400 transition-colors relative group"
             >
-              Problems
+              Solutions
               <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-amber-400 group-hover:w-full transition-all duration-300" />
             </Link>
             <Link 
@@ -61,13 +59,6 @@ export function Navbar() {
               <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-amber-400 group-hover:w-full transition-all duration-300" />
             </Link>
             <Link 
-              href="/#testimonials" 
-              className="text-sm font-medium text-stone-400 hover:text-amber-400 transition-colors relative group"
-            >
-              Testimonials
-              <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-amber-400 group-hover:w-full transition-all duration-300" />
-            </Link>
-            <Link 
               href="/blog" 
               className="text-sm font-medium text-stone-400 hover:text-amber-400 transition-colors relative group"
             >
@@ -76,20 +67,18 @@ export function Navbar() {
             </Link>
           </div>
 
-          <div className="hidden md:flex items-center">
-            <Button
-              className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-stone-950 font-semibold shadow-lg shadow-amber-500/25 hover:shadow-amber-500/40 transition-all"
-              onClick={() => setShowInterestOpen(true)}
-            >
-              Show interest
-              <Bell className="ml-2 h-4 w-4" />
-            </Button>
+          <div className="hidden md:flex items-center gap-3">
+            <Link href="/login">
+              <Button variant="ghost" className="text-stone-400 hover:text-white hover:bg-stone-800">
+                Log in
+              </Button>
+            </Link>
+            <Link href="/register">
+              <Button className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-stone-950 font-semibold shadow-lg shadow-amber-500/25 hover:shadow-amber-500/40 transition-all" title="No card required">
+                Start free trial
+              </Button>
+            </Link>
           </div>
-          <ShowInterestDialog
-            source="navbar"
-            open={showInterestOpen}
-            onOpenChange={setShowInterestOpen}
-          />
 
           {/* Mobile menu button */}
           <button
@@ -113,7 +102,7 @@ export function Navbar() {
               className="block px-4 py-3 text-sm font-medium text-stone-300 hover:text-amber-400 hover:bg-stone-800/50 rounded-lg transition-colors"
               onClick={() => setMobileMenuOpen(false)}
             >
-              Problems
+              Solutions
             </Link>
             <Link
               href="/#features"
@@ -130,30 +119,23 @@ export function Navbar() {
               Pricing
             </Link>
             <Link
-              href="/#testimonials"
-              className="block px-4 py-3 text-sm font-medium text-stone-300 hover:text-amber-400 hover:bg-stone-800/50 rounded-lg transition-colors"
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              Testimonials
-            </Link>
-            <Link
               href="/blog"
               className="block px-4 py-3 text-sm font-medium text-stone-300 hover:text-amber-400 hover:bg-stone-800/50 rounded-lg transition-colors"
               onClick={() => setMobileMenuOpen(false)}
             >
               Blog
             </Link>
-            <div className="px-4 pt-4 border-t border-stone-800">
-              <Button
-                className="w-full justify-center bg-gradient-to-r from-amber-500 to-amber-600 text-stone-950 font-semibold"
-                onClick={() => {
-                  setShowInterestOpen(true)
-                  setMobileMenuOpen(false)
-                }}
-              >
-                Show interest
-                <Bell className="ml-2 h-4 w-4" />
-              </Button>
+            <div className="px-4 pt-4 border-t border-stone-800 flex flex-col gap-2">
+              <Link href="/login" onClick={() => setMobileMenuOpen(false)}>
+                <Button variant="outline" className="w-full justify-center border-stone-600 text-stone-300 hover:bg-stone-800">
+                  Log in
+                </Button>
+              </Link>
+              <Link href="/register" onClick={() => setMobileMenuOpen(false)}>
+                <Button className="w-full justify-center bg-gradient-to-r from-amber-500 to-amber-600 text-stone-950 font-semibold">
+                  Start free trial
+                </Button>
+              </Link>
             </div>
           </div>
         )}

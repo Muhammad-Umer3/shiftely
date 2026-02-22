@@ -6,11 +6,13 @@ export const SUBSCRIPTION_TIERS = {
     employeeLimit: 5,
     scheduleLimit: 1,
     features: [
-      'Core scheduling',
-      'Basic notifications',
+      'AI builds your schedule in minutes',
+      'Email & WhatsApp notifications—fewer no-shows',
+      'CSV export for payroll',
+      'Overtime & conflict warnings',
       'Up to 5 employees',
       '1 active schedule',
-      'AI schedule generation',
+      'One place for shifts & availability',
     ],
   },
   GROWTH: {
@@ -19,10 +21,10 @@ export const SUBSCRIPTION_TIERS = {
     employeeLimit: 15,
     scheduleLimit: null,
     features: [
-      'All Free features',
+      'Everything in Free',
       'Up to 15 employees',
       'Unlimited schedules',
-      'Shift swap requests',
+      'Shift swap requests—approve in one click',
     ],
   },
   PRO: {
@@ -31,7 +33,7 @@ export const SUBSCRIPTION_TIERS = {
     employeeLimit: 100,
     scheduleLimit: null,
     features: [
-      'All Growth features',
+      'Everything in Growth',
       'Up to 100 employees',
       'Custom roles & permissions',
       'Priority support',

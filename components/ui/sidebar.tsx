@@ -4,7 +4,7 @@ import * as React from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils/cn'
-import { Users, Calendar, Settings, LogOut, CalendarOff } from 'lucide-react'
+import { Users, Calendar, Settings, LogOut, CalendarOff, CalendarDays, UserCog } from 'lucide-react'
 import { signOut } from 'next-auth/react'
 import { usePermissions } from '@/lib/hooks/use-permissions'
 import { PERMISSIONS } from '@/lib/permissions/permissions'
@@ -15,10 +15,12 @@ export function Sidebar() {
   const { hasPermission } = usePermissions()
 
   const allNavigation = [
+    { name: 'My Schedule', href: '/my-schedule', icon: CalendarDays },
     { name: 'Schedules', href: '/schedules', icon: Calendar, permission: PERMISSIONS.SCHEDULE_VIEW },
     { name: 'Employees', href: '/employees', icon: Users, permission: PERMISSIONS.EMPLOYEE_VIEW },
     { name: 'Swaps', href: '/swaps', icon: Calendar, permission: PERMISSIONS.SWAP_VIEW },
     { name: 'Time off', href: '/time-off', icon: CalendarOff },
+    { name: 'My availability', href: '/my-availability', icon: UserCog },
     { name: 'Settings', href: '/settings', icon: Settings, permission: PERMISSIONS.SETTINGS_VIEW },
   ]
 

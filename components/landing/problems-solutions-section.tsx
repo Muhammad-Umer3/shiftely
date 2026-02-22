@@ -1,27 +1,32 @@
 'use client'
 
-import { AlertCircle, Calendar, MessageSquare, Briefcase, ArrowRight } from 'lucide-react'
+import { AlertCircle, Calendar, MessageSquare, Briefcase, FileSpreadsheet } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 
 const problemSolutionPairs = [
   {
-    problem: 'Hours lost to spreadsheets, WhatsApp, and last-minute changes',
-    solution: 'One place for schedules and availability; AI generates in minutes so you tweak, not build from scratch.',
+    problem: 'Hours wasted on spreadsheets, WhatsApp, and last-minute fire drills',
+    solution: 'One place for schedules and availability. AI drafts in minutes—you tweak, not build from zero.',
     icon: Calendar,
   },
   {
-    problem: '"I didn\'t know I was working": no-shows and confusion',
-    solution: 'Notifications so everyone sees their shifts; one calendar for the whole team.',
+    problem: '"I didn\'t know I was working"—no-shows and confused staff',
+    solution: 'Email and WhatsApp notifications. One shared calendar, one source of truth.',
     icon: AlertCircle,
   },
   {
-    problem: 'Swap and time-off requests buried in texts and emails',
-    solution: 'Request and approve swaps and time off in the app; one click, no chasing.',
+    problem: 'Swap and time-off requests lost in texts and emails',
+    solution: 'Request and approve swaps and time off in the app. One click.',
     icon: MessageSquare,
   },
   {
-    problem: 'Scheduling feels like a second job',
-    solution: 'Built for small teams: add people, set availability, publish. No IT, no complexity.',
+    problem: 'Re-keying hours into payroll or missing overtime until payday',
+    solution: 'One-click CSV export. See weekly hours and overtime before you publish.',
+    icon: FileSpreadsheet,
+  },
+  {
+    problem: 'Scheduling feels like a second (unpaid) job',
+    solution: 'Add people, set availability, hit publish. No IT. Live in minutes.',
     icon: Briefcase,
   },
 ]
@@ -51,23 +56,17 @@ function ProblemSolutionCard({
   return (
     <div
       ref={cardRef}
-      className={`group relative p-8 rounded-2xl transition-all duration-500 glass-card hover:border-amber-500/20 ${
-        isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
+      className={`group relative p-6 rounded-2xl transition-all duration-300 glass-card border border-stone-800 hover:border-amber-500/20 ${
+        isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
       }`}
-      style={{ transitionDelay: `${index * 100}ms` }}
+      style={{ transitionDelay: `${index * 50}ms` }}
     >
-      <div className="absolute inset-0 rounded-2xl bg-amber-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
       <div className="relative z-10">
-        <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-xl bg-stone-800 group-hover:bg-amber-500/20 transition-all duration-300">
-          <Icon className="h-7 w-7 text-amber-400" />
+        <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-stone-800">
+          <Icon className="h-6 w-6 text-amber-400" />
         </div>
-        <p className="text-stone-400 text-sm font-medium mb-2 flex items-center gap-2">
-          <span className="text-amber-400/80">The problem</span>
-          <ArrowRight className="w-4 h-4 opacity-60" />
-        </p>
-        <p className="text-white font-medium mb-4">{pair.problem}</p>
-        <p className="text-amber-400/90 text-sm font-medium mb-2">How Shiftely helps</p>
-        <p className="text-stone-400 leading-relaxed">{pair.solution}</p>
+        <p className="text-white font-semibold text-lg mb-3 leading-snug">{pair.problem}</p>
+        <p className="text-stone-400 text-sm leading-relaxed">{pair.solution}</p>
       </div>
     </div>
   )
@@ -76,25 +75,23 @@ function ProblemSolutionCard({
 export function ProblemsSolutionsSection() {
   return (
     <section id="problems" className="py-24 bg-stone-950 relative overflow-hidden">
-      <div className="absolute inset-0 grid-pattern opacity-30" />
-      <div className="absolute top-1/2 right-0 w-96 h-96 bg-amber-500/5 rounded-full blur-3xl" />
-      <div className="absolute bottom-0 left-0 w-96 h-96 bg-amber-600/5 rounded-full blur-3xl" />
+      <div className="absolute inset-0 grid-pattern opacity-15" />
 
       <div className="container mx-auto px-6 relative z-10">
         <div className="mx-auto max-w-3xl text-center mb-20">
           <span className="inline-block text-amber-400 text-sm font-semibold tracking-wider uppercase mb-4">
-            Problems
+            Sound familiar?
           </span>
           <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
-            Problems we
-            <span className="block gradient-text">solve</span>
+            The scheduling headaches
+            <span className="block gradient-text">we eliminate</span>
           </h2>
           <p className="text-lg text-stone-400">
-            We built Shiftely around the real pains of running shifts, so you spend less time scheduling and more time running your business.
+            We built Shiftely around the real pain of running shifts—so you spend less time on schedules and more time on what actually grows your business.
           </p>
         </div>
 
-        <div className="grid gap-6 md:grid-cols-2 max-w-5xl mx-auto">
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 max-w-6xl mx-auto">
           {problemSolutionPairs.map((pair, index) => (
             <ProblemSolutionCard key={pair.problem} pair={pair} index={index} />
           ))}

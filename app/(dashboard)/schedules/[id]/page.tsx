@@ -5,14 +5,12 @@ import { prisma } from '@/lib/db/prisma'
 import { ScheduleCalendar } from '@/components/schedule/schedule-calendar'
 import { ScheduleRosterView } from '@/components/schedule/schedule-roster-view'
 import { ScheduleViewToggle } from '@/components/schedule/schedule-view-toggle'
-import { EditScheduleButton } from '@/components/schedule/edit-schedule-button'
-import { CopyScheduleButton } from '@/components/schedule/copy-schedule-button'
 import { PublishScheduleButton } from '@/components/schedule/publish-schedule-button'
 import { ExportScheduleButton } from '@/components/schedule/export-schedule-button'
 import { ShareScheduleButton } from '@/components/schedule/share-schedule-button'
-import { format, subWeeks } from 'date-fns'
+import { ScheduleChat } from '@/components/schedule/schedule-chat'
+import { format, addDays } from 'date-fns'
 import { PERMISSIONS } from '@/lib/permissions/permissions'
-import { PermissionGuard } from '@/components/guards/permission-guard'
 import { checkPermission } from '@/lib/utils/auth'
 import Link from 'next/link'
 import { ChevronLeft } from 'lucide-react'
@@ -26,7 +24,7 @@ type ViewMode = 'grid' | 'roster'
 
 export default async function ScheduleDetailPage({ params, searchParams }: PageProps) {
   const user = await requirePermission(PERMISSIONS.SCHEDULE_VIEW)
-  const { id } = await params
+  const { id: slugOrId } = await params
 
   const rawParams = searchParams ?? {}
   const paramsResolved = typeof (rawParams as Promise<unknown>).then === 'function'
@@ -36,8 +34,8 @@ export default async function ScheduleDetailPage({ params, searchParams }: PageP
 
   const schedule = await prisma.schedule.findFirst({
     where: {
-      id,
       organizationId: user.organizationId,
+      OR: [{ id: slugOrId }, { slug: slugOrId }],
     },
     include: {
       slots: {
@@ -88,7 +86,13 @@ export default async function ScheduleDetailPage({ params, searchParams }: PageP
     include: { user: true },
   })
 
-  const scheduleDisplay = scheduleRow.displaySettings as { startHour?: number; endHour?: number; workingDays?: number[]; displayGroupIds?: string[] } | null
+  const scheduleDisplay = scheduleRow.displaySettings as {
+    startHour?: number
+    endHour?: number
+    workingDays?: number[]
+    displayGroupIds?: string[]
+    shiftDefaults?: { minPeople?: number; maxPeople?: number }
+  } | null
   const displayGroupIds = Array.isArray(scheduleDisplay?.displayGroupIds) ? scheduleDisplay.displayGroupIds : []
 
   const groups = displayGroupIds.length > 0
@@ -105,10 +109,14 @@ export default async function ScheduleDetailPage({ params, searchParams }: PageP
   const employeeIdsFromGroups = new Set(
     (groups as GroupWithMembers[]).flatMap((g) => g.members.map((m) => m.employeeId))
   )
-  const employees =
+  const employeesFiltered =
     displayGroupIds.length > 0
       ? allEmployees.filter((e) => employeeIdsFromGroups.has(e.id))
       : allEmployees
+  const employees = employeesFiltered.map((e) => ({
+    ...e,
+    hourlyRate: e.hourlyRate != null ? Number(e.hourlyRate) : null,
+  }))
 
   const canEdit = await checkPermission(PERMISSIONS.SCHEDULE_EDIT)
   const canPublish = await checkPermission(PERMISSIONS.SCHEDULE_PUBLISH)
@@ -133,6 +141,68 @@ export default async function ScheduleDetailPage({ params, searchParams }: PageP
     select: { id: true },
   })
 
+  const weekEnd = addDays(weekStart, 6)
+  const employeeIds = employees.map((e) => e.id)
+  const [leaves, approvedTimeOff] = await Promise.all([
+    employeeIds.length > 0
+      ? prisma.employeeLeave.findMany({
+          where: {
+            organizationId: user.organizationId,
+            employeeId: { in: employeeIds },
+            startDate: { lte: weekEnd },
+            endDate: { gte: weekStart },
+          },
+          orderBy: { startDate: 'asc' },
+        })
+      : [],
+    employeeIds.length > 0
+      ? prisma.timeOffRequest.findMany({
+          where: {
+            organizationId: user.organizationId,
+            employeeId: { in: employeeIds },
+            status: 'APPROVED',
+            startDate: { lte: weekEnd },
+            endDate: { gte: weekStart },
+          },
+          orderBy: { startDate: 'asc' },
+        })
+      : [],
+  ])
+
+  const timeOffByEmployee: Record<
+    string,
+    { leaves: { id: string; startDate: Date; endDate: Date; type: string; notes: string | null }[]; requests: { id: string; startDate: Date; endDate: Date; type: string; notes: string | null }[] }
+  > = {}
+  for (const l of leaves) {
+    if (!timeOffByEmployee[l.employeeId]) timeOffByEmployee[l.employeeId] = { leaves: [], requests: [] }
+    timeOffByEmployee[l.employeeId].leaves.push({
+      id: l.id,
+      startDate: l.startDate,
+      endDate: l.endDate,
+      type: l.type,
+      notes: l.notes,
+    })
+  }
+  for (const r of approvedTimeOff) {
+    if (!timeOffByEmployee[r.employeeId]) timeOffByEmployee[r.employeeId] = { leaves: [], requests: [] }
+    timeOffByEmployee[r.employeeId].requests.push({
+      id: r.id,
+      startDate: r.startDate,
+      endDate: r.endDate,
+      type: r.type,
+      notes: r.notes,
+    })
+  }
+  const timeOffByEmployeeSerialized = Object.fromEntries(
+    Object.entries(timeOffByEmployee).map(([empId, data]) => [
+      empId,
+      {
+        leaves: data.leaves.map((l) => ({ ...l, startDate: l.startDate.toISOString(), endDate: l.endDate.toISOString() })),
+        requests: data.requests.map((r) => ({ ...r, startDate: r.startDate.toISOString(), endDate: r.endDate.toISOString() })),
+      },
+    ])
+  )
+
   return (
     <div className="space-y-6 text-stone-900">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
@@ -150,7 +220,7 @@ export default async function ScheduleDetailPage({ params, searchParams }: PageP
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <ScheduleViewToggle view={viewMode} basePath={`/schedules/${id}`} showMonthView={false} />
+          <ScheduleViewToggle view={viewMode} basePath={`/schedules/${schedule.slug ?? schedule.id}`} showMonthView={false} />
           {canPublish && scheduleRow.status === 'DRAFT' && (
             <PublishScheduleButton scheduleId={schedule.id} />
           )}
@@ -161,23 +231,12 @@ export default async function ScheduleDetailPage({ params, searchParams }: PageP
               </span>
               <ShareScheduleButton
                 scheduleId={schedule.id}
+                slug={schedule.slug}
                 employeeId={currentUserEmployee?.id}
               />
             </>
           )}
           <ExportScheduleButton scheduleId={schedule.id} />
-          <PermissionGuard permission={PERMISSIONS.SCHEDULE_EDIT}>
-            <CopyScheduleButton
-              targetWeekStart={weekStartStr}
-              sourceWeekStart={format(subWeeks(weekStart, 1), 'yyyy-MM-dd')}
-            />
-            <EditScheduleButton
-              scheduleId={schedule.id}
-              name={scheduleRow.name}
-              displayGroupIds={displayGroupIds}
-              displaySettings={{ startHour: displayStartHour, endHour: displayEndHour, workingDays, displayGroupIds }}
-            />
-          </PermissionGuard>
         </div>
       </div>
 
@@ -201,6 +260,7 @@ export default async function ScheduleDetailPage({ params, searchParams }: PageP
               organizationId={user.organizationId}
               canEdit={canEdit}
               workingDays={workingDays}
+              timeOffByEmployee={timeOffByEmployeeSerialized}
             />
           ) : (
             <ScheduleCalendar
@@ -214,10 +274,13 @@ export default async function ScheduleDetailPage({ params, searchParams }: PageP
               endHour={displayEndHour}
               workingDays={workingDays}
               canEdit={canEdit}
+              timeOffByEmployee={timeOffByEmployeeSerialized}
             />
           )}
         </CardContent>
       </Card>
+
+      <ScheduleChat scheduleId={schedule.id} />
     </div>
   )
 }

@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { requireAuth } from '@/lib/utils/auth'
+import { requireAuth, checkPermission } from '@/lib/utils/auth'
 import { prisma } from '@/lib/db/prisma'
 import { NotificationService } from '@/server/services/notifications/notification.service'
+import { addScheduleChatSystemMessage } from '@/lib/schedule-chat'
+import { PERMISSIONS } from '@/lib/permissions/permissions'
 
 export async function POST(
   req: NextRequest,
@@ -15,10 +17,6 @@ export async function POST(
       where: {
         id,
         organizationId: user.organizationId,
-        OR: [
-          { targetEmployeeId: user.id },
-          { requesterId: user.id },
-        ],
       },
       include: {
         slot: true,
@@ -29,6 +27,13 @@ export async function POST(
 
     if (!swap) {
       return NextResponse.json({ message: 'Swap not found' }, { status: 404 })
+    }
+
+    const isRequesterOrTarget =
+      swap.requesterId === user.id || swap.targetEmployeeId === user.id
+    const canApproveAsManager = await checkPermission(PERMISSIONS.SWAP_APPROVE)
+    if (!isRequesterOrTarget && !canApproveAsManager) {
+      return NextResponse.json({ message: 'You cannot approve this swap' }, { status: 403 })
     }
 
     if (swap.status !== 'PENDING') {
@@ -62,6 +67,12 @@ export async function POST(
 
     // Send notifications
     await NotificationService.notifySlotSwap(swap.id, 'approved')
+
+    // Add system message to schedule chat
+    await addScheduleChatSystemMessage(swap.slot.scheduleId, 'Shift swap approved.', {
+      kind: 'swap_approved',
+      swapId: swap.id,
+    })
 
     return NextResponse.json({ swap: updatedSwap }, { status: 200 })
   } catch (error) {

@@ -10,9 +10,10 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
-import { format, addDays, startOfWeek } from 'date-fns'
+import { format, addDays, startOfWeek, subWeeks } from 'date-fns'
 import { toast } from 'sonner'
-import { Calendar } from 'lucide-react'
+import { Calendar, Copy } from 'lucide-react'
+import { cn } from '@/lib/utils/cn'
 
 export function CreateScheduleDialog({
   open,
@@ -28,45 +29,76 @@ export function CreateScheduleDialog({
   const router = useRouter()
   const [name, setName] = useState('')
   const [weekStart, setWeekStart] = useState(defaultWeekStart)
+  const [copyFromPrevious, setCopyFromPrevious] = useState(false)
   const [creating, setCreating] = useState(false)
 
   useEffect(() => {
     setWeekStart(defaultWeekStart)
   }, [defaultWeekStart, open])
 
+  const weekStartDate = new Date(weekStart)
+  const previousWeekStart = subWeeks(startOfWeek(weekStartDate, { weekStartsOn: 1 }), 1)
+  const sourceWeekStartStr = format(previousWeekStart, 'yyyy-MM-dd')
+
   const handleCreate = async () => {
     setCreating(true)
     try {
-      const res = await fetch('/api/schedules', {
+      const createRes = await fetch('/api/schedules', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           weekStartDate: weekStart,
-          autoFill: true,
+          autoFill: !copyFromPrevious,
           name: name.trim() || undefined,
         }),
       })
-      const data = await res.json()
+      const createData = await createRes.json()
 
-      if (res.ok) {
-        if (res.status === 201 && data.schedule?.id) {
-          toast.success('Schedule created successfully!')
-          window.dispatchEvent(new CustomEvent('schedule-created'))
-          onOpenChange(false)
-          onCreated?.()
-          router.push(`/schedules/${data.schedule.id}`)
-          router.refresh()
-        } else if (data.existing && data.schedule?.id) {
-          toast.info('Schedule already exists for this week.')
-          onOpenChange(false)
-          router.push(`/schedules/${data.schedule.id}`)
-          router.refresh()
+      if (!createRes.ok) {
+        if (createRes.status === 403) {
+          toast.error(createData.message || 'Upgrade required to create more schedules')
+        } else {
+          toast.error(createData.message || 'Failed to create schedule')
         }
-      } else if (res.status === 403) {
-        toast.error(data.message || 'Upgrade required to create more schedules')
-      } else {
-        toast.error(data.message || 'Failed to create schedule')
+        setCreating(false)
+        return
       }
+
+      if (copyFromPrevious) {
+        const copyRes = await fetch('/api/schedules/copy', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            targetWeekStart: weekStart,
+            sourceWeekStart: sourceWeekStartStr,
+          }),
+        })
+        const copyData = await copyRes.json()
+        if (copyRes.ok) {
+          toast.success(
+            copyData.copiedCount > 0
+              ? `Schedule created with ${copyData.copiedCount} shifts copied from previous week`
+              : 'Schedule created. No shifts to copy from previous week.'
+          )
+        } else {
+          toast.success('Schedule created.')
+          if (copyData.message) toast.info(copyData.message)
+        }
+      } else if (createRes.status === 201 && createData.schedule?.id) {
+        toast.success('Schedule created successfully!')
+      } else if (createData.existing && createData.schedule?.id) {
+        toast.info('Schedule already exists for this week.')
+      }
+
+      window.dispatchEvent(new CustomEvent('schedule-created'))
+      onOpenChange(false)
+      onCreated?.()
+      if (createData.schedule?.id) {
+        router.push(`/schedules/${createData.schedule.slug ?? createData.schedule.id}`)
+      } else {
+        router.push('/schedules')
+      }
+      router.refresh()
     } catch {
       toast.error('An error occurred')
     } finally {
@@ -74,9 +106,9 @@ export function CreateScheduleDialog({
     }
   }
 
-  const weekStartDate = new Date(weekStart)
   const weekEndDate = addDays(weekStartDate, 6)
   const weekLabel = `${format(weekStartDate, 'MMM d')} – ${format(weekEndDate, 'MMM d')}, ${format(weekStartDate, 'yyyy')}`
+  const sourceWeekLabel = `${format(previousWeekStart, 'MMM d')} – ${format(addDays(previousWeekStart, 6), 'MMM d')}, ${format(previousWeekStart, 'yyyy')}`
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -113,6 +145,40 @@ export function CreateScheduleDialog({
               {weekLabel}
             </p>
           </div>
+
+          <div className="border border-stone-200 rounded-lg p-3 bg-stone-50/50">
+            <label
+              className={cn(
+                'flex items-start gap-3 cursor-pointer',
+                copyFromPrevious && 'text-amber-700'
+              )}
+            >
+              <input
+                type="checkbox"
+                checked={copyFromPrevious}
+                onChange={(e) => setCopyFromPrevious(e.target.checked)}
+                className="mt-0.5 rounded border-stone-300 text-amber-600 focus:ring-amber-500"
+              />
+              <div>
+                <span className="flex items-center gap-1.5 font-medium text-stone-800">
+                  <Copy className="h-4 w-4 text-amber-600" />
+                  Copy shifts from previous week
+                </span>
+                <p className="text-xs text-stone-500 mt-1">
+                  {copyFromPrevious
+                    ? `Shifts from ${sourceWeekLabel} will be copied into this schedule.`
+                    : 'Create an empty schedule (or use auto-fill to add placeholder shifts).'}
+                </p>
+              </div>
+            </label>
+          </div>
+
+          <div className="rounded-lg border border-amber-200 bg-amber-50/80 px-3 py-2.5 text-sm text-amber-900">
+            <p className="font-medium mb-0.5">Note</p>
+            <p className="text-xs text-amber-800">
+              Display hours and min/max people per shift cannot be changed after the schedule is created. They are set from your organization defaults. Use Settings to change defaults before creating if needed.
+            </p>
+          </div>
           <p className="text-xs text-stone-500">
             After creating, use Edit schedule to choose which groups to display in the calendar.
           </p>
@@ -126,7 +192,7 @@ export function CreateScheduleDialog({
             disabled={creating}
             className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-stone-950 font-semibold"
           >
-            {creating ? 'Creating...' : 'Create schedule'}
+            {creating ? 'Creating...' : copyFromPrevious ? 'Create & copy' : 'Create schedule'}
           </Button>
         </DialogFooter>
       </DialogContent>

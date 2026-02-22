@@ -7,12 +7,24 @@ import { Button } from '@/components/ui/button'
 
 const faqs = [
   {
-    question: 'I\'m drowning in spreadsheets and last-minute changes. Will this actually help?',
-    answer: 'Yes. Shiftely gives you one place for schedules and availability, so you stop retyping and chasing. AI generates a draft in minutes so you tweak instead of build from scratch. Notifications mean your team always sees their shifts, so you get fewer "I didn\'t know I was working" no-shows. Many teams save hours every week and cut scheduling conflicts to zero.',
+    question: 'How much does Shiftely cost?',
+    answer: 'Free: up to 5 employees and 1 active schedule—no card required. Growth: $29/mo for up to 15 employees and unlimited schedules, plus shift swaps. Pro: $79/mo for up to 100 employees, custom roles, and priority support. Paid plans include a 7-day free trial.',
+  },
+  {
+    question: 'I\'m drowning in spreadsheets and last-minute chaos. Will this actually help?',
+    answer: 'Yes. Shiftely gives you one place for schedules and availability—no more retyping or chasing people. AI drafts your schedule in minutes so you tweak instead of build from zero. Your team gets notified so everyone sees their shifts; that means fewer no-shows and zero "I didn\'t know" excuses. Teams like yours report hours back every week and far fewer conflicts.',
   },
   {
     question: 'How does the AI scheduling work?',
-    answer: 'Add your employees and set their availability (which days and times they can work). When you need a schedule for a week, click "Generate with AI." The AI uses everyone\'s availability to create an optimal schedule. You can review, tweak, and publish. No technical skills required.',
+    answer: 'Add your employees and set their availability (days and times they can work). When you need a schedule, click "Generate with AI." The AI builds a fair, conflict-free draft from everyone\'s availability. You review, tweak if needed, and publish. No technical skills—you\'re live in minutes.',
+  },
+  {
+    question: 'Can I use this for payroll?',
+    answer: 'Yes. Export any published schedule to CSV in one click—employee name, date, start time, end time, hours, and position. Use the file with your payroll system so you don\'t re-key hours.',
+  },
+  {
+    question: 'How do I avoid accidental overtime?',
+    answer: 'When you build a schedule, we show when someone is over 40 hours for the week and flag availability conflicts. You can fix it before publishing, so overtime never surprises you at payday.',
   },
   {
     question: 'Can employees swap shifts?',
@@ -28,11 +40,11 @@ const faqs = [
   },
   {
     question: 'Do I need technical skills to use Shiftely?',
-    answer: 'No. Shiftely is built for SMEs with non-technical staff. Add employees, set availability, and let AI generate schedules. It\'s designed to be simple from day one.',
+    answer: 'No. Shiftely is built for small teams and busy managers. Add people, set availability, hit generate. No IT, no learning curve—you\'re creating schedules from day one.',
   },
   {
     question: 'Is there a free trial?',
-    answer: 'Yes! All paid plans come with a 7-day free trial with full access to all features. A credit card is required to start your trial, but you won\'t be charged until the trial ends. Cancel anytime before the trial ends and you won\'t be charged.',
+    answer: 'You can start completely free with no credit card. Paid plans include a 7-day free trial with full access. You\'re only charged after the trial—and you can cancel anytime before that.',
   },
 ]
 
@@ -81,11 +93,11 @@ export function FAQSection() {
               FAQ
             </span>
             <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
-              Frequently asked
-              <span className="block gradient-text">questions</span>
+              Questions we hear
+              <span className="block gradient-text">all the time</span>
             </h2>
             <p className="text-lg text-stone-400">
-              Common questions from business owners and managers
+              Quick answers for managers and business owners
             </p>
           </div>
 
@@ -102,11 +114,11 @@ export function FAQSection() {
 
           {/* Contact CTA */}
           <div className="mt-12 text-center">
-            <p className="text-stone-400 mb-4">Still have questions?</p>
+            <p className="text-stone-400 mb-4">Still have questions? We&apos;re here to help.</p>
             <Link href="/contact">
               <Button variant="outline" className="border-stone-700 text-stone-300 hover:border-amber-500/50 hover:text-amber-400 hover:bg-amber-500/5">
                 <MessageCircle className="w-4 h-4 mr-2" />
-                Contact Support
+                Get in touch
               </Button>
             </Link>
           </div>

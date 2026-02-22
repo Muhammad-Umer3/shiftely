@@ -3,6 +3,7 @@
 import { useDraggable } from '@dnd-kit/core'
 import { cn } from '@/lib/utils/cn'
 import { Users } from 'lucide-react'
+import { DraggableEmployee } from './draggable-employee'
 
 const GROUP_DRAG_PREFIX = 'group:'
 
@@ -19,15 +20,15 @@ export function getGroupIdFromDragId(id: string): string | null {
   return id.slice(GROUP_DRAG_PREFIX.length)
 }
 
-type Employee = {
+export type GroupEmployee = {
   id: string
   user: { name: string | null; email: string }
 }
 
-type Group = {
+export type Group = {
   id: string
   name: string
-  members: { employee: Employee }[]
+  members: { employee: GroupEmployee }[]
 }
 
 export function DraggableGroup({
@@ -43,21 +44,33 @@ export function DraggableGroup({
   })
 
   return (
-    <div
-      ref={setNodeRef}
-      {...(disabled ? {} : { ...attributes, ...listeners })}
-      className={cn(
-        'flex items-center gap-2 text-sm text-stone-700 py-1.5 px-2 truncate cursor-grab active:cursor-grabbing rounded hover:bg-stone-100 transition-colors',
-        isDragging && 'opacity-50',
-        disabled && 'cursor-not-allowed opacity-60'
-      )}
-      title={`${group.name} (${group.members.length} members)`}
-    >
-      <div className="w-6 h-6 rounded bg-amber-100 flex items-center justify-center shrink-0">
-        <Users className="h-3.5 w-3.5 text-amber-700" />
+    <div className="rounded border border-amber-200/80 bg-amber-50/50 overflow-hidden">
+      <div
+        ref={setNodeRef}
+        {...(disabled ? {} : { ...attributes, ...listeners })}
+        className={cn(
+          'flex items-center gap-2 text-sm text-stone-700 py-1.5 px-2 truncate cursor-grab active:cursor-grabbing rounded-t hover:bg-amber-100/50 transition-colors',
+          isDragging && 'opacity-50',
+          disabled && 'cursor-not-allowed opacity-60'
+        )}
+        title={`${group.name} (${group.members.length} members) – drag to assign all`}
+      >
+        <div className="w-6 h-6 rounded bg-amber-100 flex items-center justify-center shrink-0">
+          <Users className="h-3.5 w-3.5 text-amber-700" />
+        </div>
+        <span className="truncate font-medium">{group.name}</span>
+        <span className="text-xs text-stone-500 shrink-0">({group.members.length})</span>
       </div>
-      <span className="truncate font-medium">{group.name}</span>
-      <span className="text-xs text-stone-500 shrink-0">({group.members.length})</span>
+      <div className="border-t border-amber-200/60 bg-white/50 pl-2 pr-1 py-1 space-y-0.5">
+        {group.members.map(({ employee }) => (
+          <DraggableEmployee
+            key={employee.id}
+            employee={employee}
+            disabled={disabled}
+            groupId={group.id}
+          />
+        ))}
+      </div>
     </div>
   )
 }

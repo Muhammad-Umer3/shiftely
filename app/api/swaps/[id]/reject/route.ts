@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { requireAuth } from '@/lib/utils/auth'
 import { prisma } from '@/lib/db/prisma'
 import { NotificationService } from '@/server/services/notifications/notification.service'
+import { addScheduleChatSystemMessage } from '@/lib/schedule-chat'
 
 export async function POST(
   req: NextRequest,
@@ -20,6 +21,7 @@ export async function POST(
           { requesterId: user.id },
         ],
       },
+      include: { slot: true },
     })
 
     if (!swap) {
@@ -36,6 +38,11 @@ export async function POST(
     })
 
     await NotificationService.notifySlotSwap(swap.id, 'rejected')
+
+    await addScheduleChatSystemMessage(swap.slot.scheduleId, 'Shift swap rejected.', {
+      kind: 'swap_rejected',
+      swapId: swap.id,
+    })
 
     return NextResponse.json({ swap: updatedSwap }, { status: 200 })
   } catch (error) {

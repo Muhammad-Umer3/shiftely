@@ -10,6 +10,7 @@ type DisplaySettings = {
   endHour: number
   workingDays: number[]
   displayGroupIds?: string[]
+  shiftDefaults?: { minPeople?: number; maxPeople?: number }
 }
 
 export function EditScheduleButton({

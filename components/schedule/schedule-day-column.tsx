@@ -4,6 +4,7 @@ import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { format } from 'date-fns'
 import { ShiftCard } from './shift-card'
 import { DroppableSlot, slotDropId } from './droppable-slot'
+import type { TimeOffByEmployee } from './schedule-calendar'
 
 function buildTimeSlots(startHour: number, endHour: number): string[] {
   const slots: string[] = []
@@ -36,6 +37,7 @@ export function ScheduleDayColumn({
   startHour = 6,
   endHour = 22,
   canEdit = true,
+  timeOffByEmployee = {},
 }: {
   day: Date
   dayName: string
@@ -45,6 +47,7 @@ export function ScheduleDayColumn({
   startHour?: number
   endHour?: number
   canEdit?: boolean
+  timeOffByEmployee?: TimeOffByEmployee
 }) {
   const timeSlots = buildTimeSlots(startHour, endHour)
   const dayStr = format(day, 'yyyy-MM-dd')
@@ -81,6 +84,7 @@ export function ScheduleDayColumn({
                       hasConflict={shiftWarnings[shift.id]?.conflict}
                       onDelete={onDeleteShift}
                       canEdit={canEdit}
+                      timeOff={shift.employee ? timeOffByEmployee[shift.employee.id] : undefined}
                     />
                   ))}
                 </SortableContext>

@@ -7,17 +7,20 @@ import { getEmployeeColor } from './employee-colors'
 
 const EMPLOYEE_DRAG_PREFIX = 'employee:'
 
-export function employeeDragId(empId: string) {
-  return `${EMPLOYEE_DRAG_PREFIX}${empId}`
+export function employeeDragId(empId: string, groupId?: string) {
+  return groupId ? `${EMPLOYEE_DRAG_PREFIX}${groupId}:${empId}` : `${EMPLOYEE_DRAG_PREFIX}${empId}`
 }
 
 export function isEmployeeDragId(id: string): boolean {
   return typeof id === 'string' && id.startsWith(EMPLOYEE_DRAG_PREFIX)
 }
 
+/** Returns employee id from drag id (handles both "employee:empId" and "employee:groupId:empId") */
 export function getEmployeeIdFromDragId(id: string): string | null {
   if (!isEmployeeDragId(id)) return null
-  return id.slice(EMPLOYEE_DRAG_PREFIX.length)
+  const rest = id.slice(EMPLOYEE_DRAG_PREFIX.length)
+  const parts = rest.split(':')
+  return parts.length >= 2 ? parts[1]! : parts[0] ?? null
 }
 
 type Employee = {
@@ -28,12 +31,15 @@ type Employee = {
 export function DraggableEmployee({
   employee,
   disabled,
+  groupId,
 }: {
   employee: Employee
   disabled?: boolean
+  /** When inside a group, pass groupId so drag id is unique across groups */
+  groupId?: string
 }) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
-    id: employeeDragId(employee.id),
+    id: employeeDragId(employee.id, groupId),
     data: { type: 'employee', employeeId: employee.id },
   })
 

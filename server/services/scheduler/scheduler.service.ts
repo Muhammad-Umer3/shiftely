@@ -1,6 +1,7 @@
 import { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/db/prisma'
 import { startOfWeek, endOfWeek, eachDayOfInterval, addDays } from 'date-fns'
+import { generateScheduleSlug } from '@/lib/schedule-slug'
 
 export class SchedulerService {
   /**
@@ -23,12 +24,16 @@ export class SchedulerService {
         displaySettings: options?.displaySettings ? (options.displaySettings as object) : undefined,
       },
     })
-
-    return schedule
+    const slug = generateScheduleSlug(schedule.name, weekStartDate, schedule.id)
+    await prisma.schedule.update({
+      where: { id: schedule.id },
+      data: { slug },
+    })
+    return { ...schedule, slug }
   }
 
   /**
-   * Update schedule name and/or display settings
+   * Update schedule name and/or display settings; regenerates slug when name changes
    */
   static async updateSchedule(
     scheduleId: string,
@@ -38,14 +43,23 @@ export class SchedulerService {
       displaySettings?: { startHour: number; endHour: number; workingDays: number[] } | null
     }
   ) {
+    const existing = await prisma.schedule.findFirst({
+      where: { id: scheduleId, organizationId },
+      select: { name: true, weekStartDate: true },
+    })
+    const updateData: Prisma.ScheduleUpdateInput = {
+      ...(data.name !== undefined && { name: data.name || null }),
+      ...(data.displaySettings !== undefined && {
+        displaySettings: data.displaySettings === null ? Prisma.DbNull : (data.displaySettings as Prisma.InputJsonValue),
+      }),
+    }
+    if (data.name !== undefined && existing?.weekStartDate) {
+      const newName = data.name ?? existing.name
+      updateData.slug = generateScheduleSlug(newName, existing.weekStartDate, scheduleId)
+    }
     return prisma.schedule.update({
       where: { id: scheduleId, organizationId },
-      data: {
-        ...(data.name !== undefined && { name: data.name || null }),
-        ...(data.displaySettings !== undefined && {
-          displaySettings: data.displaySettings === null ? Prisma.DbNull : (data.displaySettings as Prisma.InputJsonValue),
-        }),
-      },
+      data: updateData,
       include: {
         slots: {
           include: {
@@ -220,6 +234,15 @@ export class SchedulerService {
       throw new Error('No users found in organization')
     }
 
+    const schedule = await prisma.schedule.findFirst({
+      where: { id: scheduleId, organizationId },
+      select: { displaySettings: true },
+    })
+    const displaySettings = schedule?.displaySettings as { shiftDefaults?: { minPeople?: number; maxPeople?: number } } | null
+    const shiftDef = displaySettings?.shiftDefaults
+    const slotMinCount = shiftDef?.minPeople != null ? Math.max(1, shiftDef.minPeople) : undefined
+    const slotMaxCount = shiftDef?.maxPeople != null ? Math.max(1, shiftDef.maxPeople) : undefined
+
     const createdSlots: { id: string }[] = []
 
     // Simple auto-fill: create one slot per employee per day (requiredCount=1)
@@ -240,6 +263,8 @@ export class SchedulerService {
             endTime,
             position: employee.roleType || null,
             requiredCount: 1,
+            minCount: slotMinCount,
+            maxCount: slotMaxCount,
             createdById: creator.id,
           },
         })
@@ -278,7 +303,7 @@ export class SchedulerService {
 
     let targetSchedule = await this.getScheduleForWeek(organizationId, targetWeekStart)
     if (!targetSchedule) {
-      targetSchedule = await prisma.schedule.create({
+      const created = await prisma.schedule.create({
         data: {
           organizationId,
           type: 'WEEK',
@@ -299,7 +324,13 @@ export class SchedulerService {
             },
           },
         },
-      }) as NonNullable<Awaited<ReturnType<typeof this.getScheduleForWeek>>>
+      })
+      const slug = generateScheduleSlug(created.name, targetStart, created.id)
+      await prisma.schedule.update({
+        where: { id: created.id },
+        data: { slug },
+      })
+      targetSchedule = { ...created, slug } as NonNullable<Awaited<ReturnType<typeof this.getScheduleForWeek>>>
     } else {
       // Clear existing slots when replacing
       for (const slot of targetSchedule.slots) {
@@ -324,6 +355,8 @@ export class SchedulerService {
           endTime: newEnd,
           position: sourceSlot.position,
           requiredCount: sourceSlot.requiredCount,
+          minCount: sourceSlot.minCount ?? undefined,
+          maxCount: sourceSlot.maxCount ?? undefined,
           createdById,
         },
       })

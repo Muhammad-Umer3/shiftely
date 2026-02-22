@@ -15,6 +15,14 @@ import {
 import { Button } from '@/components/ui/button'
 import { EmployeeAvatar } from './employee-avatar'
 import { toast } from 'sonner'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+  TooltipProvider,
+} from '@/components/ui/tooltip'
+import { CalendarOff } from 'lucide-react'
+import type { TimeOffByEmployee } from './schedule-calendar'
 
 const TIME_SLOTS = [
   { label: '6am - 10am', start: 6, end: 10 },
@@ -78,6 +86,53 @@ const DAY_INDEX_TO_NAME: Record<number, string> = {
   6: 'Sat',
 }
 
+const LEAVE_TYPE_LABELS: Record<string, string> = {
+  vacation: 'Vacation',
+  sick: 'Sick',
+  personal: 'Personal',
+  unpaid: 'Unpaid',
+  other: 'Other',
+}
+
+function RosterTimeOffContent({ timeOff }: { timeOff: NonNullable<TimeOffByEmployee[string]> }) {
+  const leaves = timeOff.leaves ?? []
+  const requests = timeOff.requests ?? []
+  const all = [
+    ...leaves.map((l) => ({ ...l, kind: 'Leave' as const })),
+    ...requests.map((r) => ({ ...r, kind: 'Time off' as const })),
+  ].sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime())
+  if (all.length === 0) {
+    return (
+      <div className="text-xs text-stone-500 flex items-center gap-1.5">
+        <CalendarOff className="h-3.5 w-3.5 shrink-0" />
+        No time off this week
+      </div>
+    )
+  }
+  return (
+    <div className="space-y-2 max-w-[220px]">
+      <div className="font-medium text-stone-900 text-xs border-b border-stone-200 pb-1">
+        Time off this week
+      </div>
+      <ul className="space-y-1.5 text-xs text-stone-700">
+        {all.map((entry) => (
+          <li key={entry.id} className="flex flex-col gap-0.5">
+            <span className="font-medium capitalize">
+              {LEAVE_TYPE_LABELS[entry.type] ?? entry.type}
+            </span>
+            <span className="text-stone-500">
+              {format(new Date(entry.startDate), 'MMM d')} – {format(new Date(entry.endDate), 'MMM d')}
+            </span>
+            {entry.notes && (
+              <span className="text-stone-500 italic truncate block">{entry.notes}</span>
+            )}
+          </li>
+        ))}
+      </ul>
+    </div>
+  )
+}
+
 export function ScheduleRosterView({
   schedule,
   employees,
@@ -85,6 +140,7 @@ export function ScheduleRosterView({
   organizationId,
   canEdit,
   workingDays = [1, 2, 3, 4, 5],
+  timeOffByEmployee = {},
 }: {
   schedule: Schedule
   employees: Employee[]
@@ -92,6 +148,7 @@ export function ScheduleRosterView({
   organizationId: string
   canEdit?: boolean
   workingDays?: number[]
+  timeOffByEmployee?: TimeOffByEmployee
 }) {
   const router = useRouter()
   const [addModal, setAddModal] = useState<{
@@ -180,6 +237,7 @@ export function ScheduleRosterView({
   })
 
   return (
+    <TooltipProvider delayDuration={400}>
     <div className="overflow-x-auto">
       <table className="w-full min-w-[700px] border-collapse">
         <thead>
@@ -213,14 +271,23 @@ export function ScheduleRosterView({
                 className="border-b border-stone-100 hover:bg-stone-50/50"
               >
                 <td className="sticky left-0 z-10 bg-white border-r border-stone-200 px-4 py-2">
-                  <div className="flex items-center gap-2">
-                    <EmployeeAvatar name={emp.user.name} email={emp.user.email} size="md" />
-                    <div>
-                      <p className="font-medium text-stone-900 text-sm truncate max-w-[140px]">
-                        {emp.user.name || emp.user.email}
-                      </p>
-                    </div>
-                  </div>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div className="flex items-center gap-2 cursor-help">
+                        <EmployeeAvatar name={emp.user.name} email={emp.user.email} size="md" />
+                        <div>
+                          <p className="font-medium text-stone-900 text-sm truncate max-w-[140px]">
+                            {emp.user.name || emp.user.email}
+                          </p>
+                        </div>
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent side="right" className="max-w-[240px]">
+                      <RosterTimeOffContent
+                        timeOff={timeOffByEmployee[emp.id] ?? { leaves: [], requests: [] }}
+                      />
+                    </TooltipContent>
+                  </Tooltip>
                 </td>
                 {weekDays.map((day) => {
                   const dayStr = format(day, 'yyyy-MM-dd')
@@ -320,5 +387,6 @@ export function ScheduleRosterView({
         </DialogContent>
       </Dialog>
     </div>
+    </TooltipProvider>
   )
 }

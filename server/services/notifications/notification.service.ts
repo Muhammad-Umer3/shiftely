@@ -1,7 +1,7 @@
 import { Resend } from 'resend'
 import { prisma } from '@/lib/db/prisma'
 import { format } from 'date-fns'
-import { SmsService } from '../sms/sms.service'
+import { WhatsAppService } from '../whatsapp/whatsapp.service'
 
 const resend = new Resend(process.env.RESEND_API_KEY)
 
@@ -188,10 +188,10 @@ export class NotificationService {
         await this.sendEmail(data.user.email, 'Schedule Published', emailHtml)
       }
       if (data.user.phone) {
-        const smsText = data.shifts.length > 0
+        const messageText = data.shifts.length > 0
           ? `Shiftely: Your schedule was published with ${data.shifts.length} shift(s). Check the app for details.`
           : 'Shiftely: Your schedule was published. Check the app for details.'
-        await SmsService.sendSms(data.user.phone, smsText)
+        await WhatsAppService.sendWhatsApp(data.user.phone, messageText)
       }
     }
   }
@@ -289,13 +289,13 @@ export class NotificationService {
       const shiftInfo = slot
         ? `${format(new Date(slot.startTime), 'MMM d')} ${format(new Date(slot.startTime), 'h:mm a')}`
         : ''
-      const smsText =
+      const messageText =
         notificationType === 'requested'
           ? `Shiftely: ${swap.requester.name || swap.requester.email} requested to swap ${shiftInfo} with you.`
           : notificationType === 'approved'
           ? 'Shiftely: Your shift swap was approved.'
           : 'Shiftely: Your shift swap was rejected.'
-      await SmsService.sendSms(targetUser.phone, smsText)
+      await WhatsAppService.sendWhatsApp(targetUser.phone, messageText)
     }
   }
 

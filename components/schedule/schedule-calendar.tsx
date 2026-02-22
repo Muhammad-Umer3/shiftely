@@ -7,6 +7,7 @@ import { format, addDays, startOfWeek, eachDayOfInterval } from 'date-fns'
 import { ScheduleDayColumn } from './schedule-day-column'
 import { ShiftCard } from './shift-card'
 import { DraggableGroup, isGroupDragId, getGroupIdFromDragId } from './draggable-group'
+import { isEmployeeDragId, getEmployeeIdFromDragId } from './draggable-employee'
 import Link from 'next/link'
 import { parseSlotDropId } from './droppable-slot'
 import { Button } from '@/components/ui/button'
@@ -15,6 +16,7 @@ import { Sparkles, Users, UsersRound } from 'lucide-react'
 import { toast } from 'sonner'
 import { getEmployeeColorClasses } from './employee-colors'
 import { cn } from '@/lib/utils/cn'
+import { TooltipProvider } from '@/components/ui/tooltip'
 
 const daysOfWeek = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 
@@ -75,6 +77,19 @@ type Group = {
   members: { employee: Employee }[]
 }
 
+export type TimeOffEntry = {
+  id: string
+  startDate: string
+  endDate: string
+  type: string
+  notes: string | null
+}
+
+export type TimeOffByEmployee = Record<
+  string,
+  { leaves: TimeOffEntry[]; requests: TimeOffEntry[] }
+>
+
 export function ScheduleCalendar({
   schedule,
   employees,
@@ -86,6 +101,7 @@ export function ScheduleCalendar({
   endHour = 22,
   workingDays = [1, 2, 3, 4, 5],
   canEdit = true,
+  timeOffByEmployee = {},
 }: {
   schedule: Schedule
   employees: Employee[]
@@ -97,9 +113,11 @@ export function ScheduleCalendar({
   endHour?: number
   workingDays?: number[]
   canEdit?: boolean
+  timeOffByEmployee?: TimeOffByEmployee
 }) {
   const [activeId, setActiveId] = useState<string | null>(null)
   const [activeGroup, setActiveGroup] = useState<Group | null>(null)
+  const [activeEmployee, setActiveEmployee] = useState<Employee | null>(null)
   const [aiOpen, setAiOpen] = useState(false)
   const [allGroups, setAllGroups] = useState<Group[]>([])
 
@@ -142,8 +160,14 @@ export function ScheduleCalendar({
     if (isGroupDragId(id)) {
       const gid = getGroupIdFromDragId(id)
       setActiveGroup(groupsList.find((g) => g.id === gid) ?? null)
+      setActiveEmployee(null)
+    } else if (isEmployeeDragId(id)) {
+      const empId = getEmployeeIdFromDragId(id)
+      setActiveEmployee(employees.find((e) => e.id === empId) ?? null)
+      setActiveGroup(null)
     } else {
       setActiveGroup(null)
+      setActiveEmployee(null)
     }
   }
 
@@ -151,6 +175,7 @@ export function ScheduleCalendar({
     const { active, over } = event
     setActiveId(null)
     setActiveGroup(null)
+    setActiveEmployee(null)
 
     if (!over) return
 
@@ -242,6 +267,71 @@ export function ScheduleCalendar({
       } catch (error) {
         console.error('Bulk shift error:', error)
         setOptimisticShifts((prev) => prev.filter((s) => !tempIds.includes(s.id)))
+        toast.error('An error occurred')
+      }
+      return
+    }
+
+    // Dragging single employee -> create one shift
+    if (isEmployeeDragId(String(active.id))) {
+      const empId = getEmployeeIdFromDragId(String(active.id))
+      const emp = employees.find((e) => e.id === empId)
+      if (!emp || !canEdit || !schedule?.id) return
+
+      const slotShifts = allShifts.filter((s) => {
+        const sDay = format(new Date(s.startTime), 'yyyy-MM-dd')
+        const sTime = format(new Date(s.startTime), 'HH:mm')
+        return sDay === dayStr && sTime === timeSlot
+      })
+      const alreadyInSlot = slotShifts.some((s) => s.employee?.id === empId)
+      if (alreadyInSlot) {
+        toast.error('This employee is already assigned to this slot')
+        return
+      }
+
+      const tempId = `temp-${Date.now()}`
+      const optimisticShift: Shift = {
+        id: tempId,
+        startTime: new Date(startTime),
+        endTime: new Date(endTime),
+        position: null,
+        employee: { id: emp.id, user: { name: emp.user.name, email: emp.user.email } },
+      }
+      setOptimisticShifts((prev) => [...prev, optimisticShift])
+
+      try {
+        const response = await fetch('/api/shifts', {
+          method: 'POST',
+          credentials: 'same-origin',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            organizationId,
+            employeeId: empId,
+            startTime: startTime.toISOString(),
+            endTime: endTime.toISOString(),
+            scheduleId: schedule.id,
+          }),
+        })
+        const data = await response.json().catch(() => ({}))
+        if (response.ok && data.shift) {
+          const s = data.shift
+          setOptimisticShifts((prev) =>
+            prev.filter((x) => x.id !== tempId).concat([{
+              id: s.id,
+              startTime: new Date(s.startTime),
+              endTime: new Date(s.endTime),
+              position: s.position ?? null,
+              employee: s.employee ? { id: s.employee.id, user: { name: s.employee.user?.name ?? null, email: s.employee.user?.email ?? '' } } : null,
+            }])
+          )
+          toast.success('Shift added')
+        } else {
+          setOptimisticShifts((prev) => prev.filter((s) => s.id !== tempId))
+          toast.error(data?.message ?? 'Failed to add shift')
+        }
+      } catch (error) {
+        console.error('Add shift error:', error)
+        setOptimisticShifts((prev) => prev.filter((s) => s.id !== tempId))
         toast.error('An error occurred')
       }
       return
@@ -357,6 +447,7 @@ export function ScheduleCalendar({
   }
 
   return (
+    <TooltipProvider delayDuration={400}>
     <DndContext collisionDetection={closestCenter} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
       <div className="flex gap-4">
         {/* Groups & Employees sidebar - groups first, employees nested under each */}
@@ -429,6 +520,7 @@ export function ScheduleCalendar({
             startHour={startHour}
             endHour={endHour}
             canEdit={canEdit}
+            timeOffByEmployee={timeOffByEmployee}
           />
         ))}
         </div>
@@ -449,6 +541,15 @@ export function ScheduleCalendar({
             <span className="font-medium">{activeGroup.name}</span>
             <span className="text-xs text-stone-500">({activeGroup.members.length})</span>
           </div>
+        ) : activeEmployee ? (
+          (() => {
+            const colorClasses = getEmployeeColorClasses(activeEmployee.id)
+            return (
+              <div className={cn('text-white p-2 rounded shadow-lg text-sm', colorClasses)}>
+                {activeEmployee.user.name || activeEmployee.user.email}
+              </div>
+            )
+          })()
         ) : activeId ? (
           (() => {
             const draggingShift = allShifts.find((s) => s.id === activeId)
@@ -462,5 +563,6 @@ export function ScheduleCalendar({
         ) : null}
       </DragOverlay>
     </DndContext>
+    </TooltipProvider>
   )
 }

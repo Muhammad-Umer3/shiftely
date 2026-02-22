@@ -4,7 +4,7 @@ import { useState, useEffect, Suspense } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
-import { signIn } from 'next-auth/react'
+import { signIn, getSession } from 'next-auth/react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
@@ -76,7 +76,9 @@ function LoginForm() {
       if (result?.error) {
         setError('Invalid email or password')
       } else {
-        router.push('/schedules')
+        const session = await getSession()
+        const destination = session?.user?.role === 'EMPLOYEE' ? '/my-schedule' : '/schedules'
+        router.push(destination)
         router.refresh()
       }
     } catch (error) {

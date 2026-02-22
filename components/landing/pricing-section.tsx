@@ -39,11 +39,11 @@ export function PricingSection() {
             Pricing
           </span>
           <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
-            Simple, transparent
-            <span className="block gradient-text">pricing for everyone</span>
+            Start free. Scale when you&apos;re ready.
+            <span className="block gradient-text">No surprises.</span>
           </h2>
           <p className="text-lg text-stone-400">
-            Start free, upgrade when you&apos;re ready. 7-day trial with credit card.
+            No credit card to start. Upgrade when you need more—paid plans include a 7-day free trial.
           </p>
         </div>
 
@@ -79,12 +79,19 @@ export function PricingSection() {
                     <h3 className="text-2xl font-bold text-white mb-2">{tier.name}</h3>
                     <p className="text-stone-400 text-sm mb-6">
                       {isFree 
-                        ? 'Perfect for getting started' 
-                        : `Up to ${tier.employeeLimit} employees`}
+                        ? 'Try everything free—no card required' 
+                        : `Scale to ${tier.employeeLimit} employees`}
                     </p>
                     
                     <div className="mb-8">
-                      <span className="text-lg font-medium text-stone-400">Contact for pricing</span>
+                      {isFree ? (
+                        <span className="text-lg font-medium text-stone-400">Free forever</span>
+                      ) : (
+                        <>
+                          <span className="text-3xl font-bold text-white">${tier.price}</span>
+                          <span className="text-lg font-medium text-stone-400">/mo</span>
+                        </>
+                      )}
                     </div>
                     
                     <ul className="space-y-4 mb-10">
@@ -100,7 +107,7 @@ export function PricingSection() {
                       ))}
                     </ul>
                     
-                    <Link href="/contact" className="block">
+                    <Link href="/register" className="block">
                       <Button 
                         className={`w-full py-6 text-base font-semibold transition-all ${
                           isPopular 
@@ -109,12 +116,12 @@ export function PricingSection() {
                         }`}
                         variant={isPopular ? undefined : 'outline'}
                       >
-                        {isFree ? 'Get notified' : 'Get notified'}
+                        {isFree ? 'Start free' : 'Get started'}
                       </Button>
                     </Link>
                     
                     <p className="text-xs text-center text-stone-500 mt-4">
-                      We&apos;ll be in touch when we launch
+                      {isFree ? 'No credit card · Free forever' : 'Billed monthly. Cancel anytime. 7-day free trial.'}
                     </p>
                   </div>
                 </div>

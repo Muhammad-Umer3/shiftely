@@ -1,15 +1,15 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { requirePermission } from '@/lib/utils/auth'
-import { prisma } from '@/lib/db/prisma'
 import { SubscriptionSettings } from '@/components/settings/subscription-settings'
 import { PERMISSIONS } from '@/lib/permissions/permissions'
+import { SubscriptionService } from '@/server/services/subscription/subscription.service'
 
 export default async function SettingsPage() {
   const user = await requirePermission(PERMISSIONS.SETTINGS_VIEW)
 
-  const organization = await prisma.organization.findUnique({
-    where: { id: user.organizationId },
-  })
+  const subscriptionInfo = await SubscriptionService.getSubscriptionInfo(
+    user.organizationId
+  )
 
   return (
     <div className="space-y-6 text-stone-900">
@@ -25,7 +25,10 @@ export default async function SettingsPage() {
         </CardHeader>
         <CardContent>
           <SubscriptionSettings
-            currentTier={organization?.subscriptionTier || 'FREE'}
+            currentTier={subscriptionInfo.tier}
+            subscriptionTier={subscriptionInfo.subscriptionTier}
+            trialEndsAt={subscriptionInfo.trialEndsAt}
+            isTrialing={subscriptionInfo.isTrialing}
             organizationId={user.organizationId}
           />
         </CardContent>

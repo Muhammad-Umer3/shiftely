@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { requireAuth } from '@/lib/utils/auth'
 import { prisma } from '@/lib/db/prisma'
 import { NotificationService } from '@/server/services/notifications/notification.service'
+import { addScheduleChatSystemMessage } from '@/lib/schedule-chat'
+import { format } from 'date-fns'
 
 export async function POST(req: NextRequest) {
   try {
@@ -62,6 +64,21 @@ export async function POST(req: NextRequest) {
 
     // Send notification
     await NotificationService.notifySlotSwap(swap.id, 'requested')
+
+    // Add system message to schedule chat
+    const requesterName = user.name || user.email
+    const slotTime =
+      format(new Date(swap.slot.startTime), 'EEE MMM d, h:mm a') +
+      ' – ' +
+      format(new Date(swap.slot.endTime), 'h:mm a')
+    const targetName = swap.targetEmployee?.name || swap.targetEmployee?.email || 'someone'
+    const chatBody = swap.targetEmployeeId
+      ? `${requesterName} requested to swap their shift (${slotTime}) with ${targetName}.`
+      : `${requesterName} requested to give away their shift (${slotTime}).`
+    await addScheduleChatSystemMessage(swap.slot.scheduleId, chatBody, {
+      kind: 'swap_requested',
+      swapId: swap.id,
+    })
 
     return NextResponse.json({ swap }, { status: 201 })
   } catch (error) {

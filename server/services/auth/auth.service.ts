@@ -34,11 +34,13 @@ export class AuthService {
 
     // Create organization and user in a transaction
     const result = await prisma.$transaction(async (tx) => {
-      // Create organization
+      // Create organization with 14-day Pro trial
+      const trialEndsAt = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000)
       const organization = await tx.organization.create({
         data: {
           name: organizationName,
           subscriptionTier: 'FREE',
+          trialEndsAt,
         },
       })
 

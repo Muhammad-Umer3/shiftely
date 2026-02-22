@@ -37,6 +37,7 @@ export async function POST(req: NextRequest) {
           where: { id: organizationId },
           data: {
             subscriptionTier: tier as any,
+            trialEndsAt: null,
             stripeCustomerId: customerId,
             stripeSubscriptionId: subscriptionId,
           },

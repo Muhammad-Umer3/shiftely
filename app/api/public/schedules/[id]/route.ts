@@ -6,14 +6,14 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id: scheduleId } = await params
+    const { id: slugOrId } = await params
     const { searchParams } = new URL(req.url)
     const employeeId = searchParams.get('employee') ?? undefined
 
     const schedule = await prisma.schedule.findFirst({
       where: {
-        id: scheduleId,
         status: 'PUBLISHED',
+        OR: [{ id: slugOrId }, { slug: slugOrId }],
       },
       include: {
         slots: {

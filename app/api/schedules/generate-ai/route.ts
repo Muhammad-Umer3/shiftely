@@ -69,6 +69,11 @@ export async function POST(req: NextRequest) {
       throw new Error('No users found in organization')
     }
 
+    const displaySettings = schedule.displaySettings as { shiftDefaults?: { minPeople?: number; maxPeople?: number } } | null
+    const shiftDef = displaySettings?.shiftDefaults
+    const slotMinCount = shiftDef?.minPeople != null ? Math.max(1, shiftDef.minPeople) : undefined
+    const slotMaxCount = shiftDef?.maxPeople != null ? Math.max(1, shiftDef.maxPeople) : undefined
+
     for (const s of suggestions) {
       const slot = await prisma.slot.create({
         data: {
@@ -78,6 +83,8 @@ export async function POST(req: NextRequest) {
           endTime: s.endTime,
           position: s.position,
           requiredCount: 1,
+          minCount: slotMinCount,
+          maxCount: slotMaxCount,
           createdById: creator.id,
         },
       })

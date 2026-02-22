@@ -61,14 +61,15 @@ enum InvitationStatus {
 }
 
 model Organization {
-  id                   String   @id @default(cuid())
+  id                   String    @id @default(cuid())
   name                 String
   subscriptionTier     SubscriptionTier @default(FREE)
-  stripeCustomerId     String?  @unique
-  stripeSubscriptionId String?  @unique
-  settings             Json?    @default("{}")
-  createdAt            DateTime @default(now())
-  updatedAt            DateTime @updatedAt
+  trialEndsAt          DateTime?
+  stripeCustomerId     String?   @unique
+  stripeSubscriptionId String?   @unique
+  settings             Json?     @default("{}")
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
 
   users            User[]
   employees        Employee[]
@@ -114,6 +115,7 @@ model User {
   sentInvitations      Invitation[]  @relation("Inviter")
   publishedVersions    ScheduleVersion[]
   timeOffApprovals     TimeOffRequest[]
+  scheduleChatMessages ScheduleChatMessage[]
 
   @@index([organizationId])
   @@index([email])
@@ -243,6 +245,7 @@ model Schedule {
   startDate       DateTime?      // when type = CUSTOM
   endDate         DateTime?     // when type = CUSTOM
   name            String?
+  slug            String?        @unique // name - week, e.g. front-of-house-jan-13-2025-abc12
   displaySettings Json?          // { startHour, endHour, workingDays }
   status          ScheduleStatus @default(DRAFT)
   createdById     String
@@ -254,11 +257,29 @@ model Schedule {
   event          Event?          @relation(fields: [eventId], references: [id], onDelete: SetNull)
   slots          Slot[]
   versions       ScheduleVersion[]
+  chatMessages   ScheduleChatMessage[]
 
   @@index([organizationId])
   @@index([weekStartDate])
   @@index([eventId])
   @@map("schedules")
+}
+
+model ScheduleChatMessage {
+  id         String   @id @default(cuid())
+  scheduleId String
+  userId     String?  // null for system messages
+  body       String
+  type       String   // "user" | "system"
+  metadata   Json?    @default("{}") // e.g. { kind: "swap_requested", swapId }
+  createdAt  DateTime @default(now())
+
+  schedule Schedule @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
+  user     User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([scheduleId])
+  @@index([createdAt])
+  @@map("schedule_chat_messages")
 }
 
 model ScheduleVersion {
@@ -277,7 +298,7 @@ model ScheduleVersion {
   @@map("schedule_versions")
 }
 
-// Slot = unit of work: duration (startTime->endTime) + people per slot (requiredCount)
+// Slot = unit of work: duration (startTime->endTime) + people per slot (minCount..maxCount)
 model Slot {
   id             String     @id @default(cuid())
   organizationId String
@@ -285,7 +306,9 @@ model Slot {
   startTime      DateTime
   endTime        DateTime
   position       String?
-  requiredCount  Int        @default(1)  // number of people per slot
+  requiredCount  Int        @default(1)  // target number of people (used when min/max not set)
+  minCount       Int?       // optional minimum people for this shift; null = use requiredCount
+  maxCount       Int?       // optional maximum people for this shift; null = use requiredCount
   status         SlotStatus @default(SCHEDULED)
   metadata       Json?      @default("{}")
   createdById    String
