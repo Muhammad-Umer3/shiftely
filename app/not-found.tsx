@@ -1,8 +1,14 @@
+import type { Metadata } from 'next'
 import Link from 'next/link'
 import { Navbar } from '@/components/landing/navbar'
 import { Button } from '@/components/ui/button'
 import { NotFoundSetter } from '@/components/providers/not-found-provider'
 import { Home, MapPin, Calendar, Clock, ArrowRight } from 'lucide-react'
+
+export const metadata: Metadata = {
+  title: 'Page not found | Shiftely',
+  robots: { index: false, follow: true },
+}
 
 export default function NotFound() {
   return (

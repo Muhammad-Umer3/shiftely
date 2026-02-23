@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation'
 import { MessageCircle } from 'lucide-react'
 import { useNotFound } from '@/components/providers/not-found-provider'
 
-const HIDE_PATHS = ['/contact', '/schedules', '/schedule', '/employees', '/swaps', '/time-off', '/settings', '/onboarding', '/help']
+const HIDE_PATHS = ['/contact', '/terms', '/privacy', '/cookies', '/schedules', '/schedule', '/employees', '/swaps', '/time-off', '/settings', '/onboarding', '/help']
 
 export function ContactFloatButton() {
   const pathname = usePathname()
@@ -19,7 +19,7 @@ export function ContactFloatButton() {
   return (
     <Link
       href="/contact"
-      className="fixed bottom-6 right-6 z-50 flex items-center gap-2 px-5 py-3 rounded-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-stone-950 font-semibold shadow-lg shadow-amber-500/30 hover:shadow-amber-500/50 transition-all cursor-pointer"
+      className="fixed bottom-7 right-4 z-50 flex items-center gap-2 px-5 py-3 rounded-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-stone-950 font-semibold shadow-lg shadow-amber-500/30 hover:shadow-amber-500/50 transition-all cursor-pointer"
       aria-label="Contact us"
     >
       <MessageCircle className="h-5 w-5" />

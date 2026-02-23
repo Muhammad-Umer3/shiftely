@@ -12,7 +12,7 @@ export async function POST(
     const user = await requireAuth()
     const { id: scheduleId } = await params
     const body = await req.json()
-    const { prompt, constraints } = body
+    const { prompt, constraints, strategy } = body
 
     const schedule = await prisma.schedule.findFirst({
       where: { id: scheduleId, organizationId: user.organizationId },
@@ -44,7 +44,8 @@ export async function POST(
       weekStart,
       typeof prompt === 'string' ? prompt : '',
       schedule,
-      constraints
+      constraints,
+      typeof strategy === 'string' ? strategy : undefined
     )
 
     return NextResponse.json({ suggestions, summary }, { status: 200 })

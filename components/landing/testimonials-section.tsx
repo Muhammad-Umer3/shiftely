@@ -1,7 +1,40 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { Clock, Zap, CheckCircle } from 'lucide-react'
+import { UtensilsCrossed, Store, Stethoscope, Coffee, Scissors, Warehouse } from 'lucide-react'
+
+const businesses = [
+  {
+    icon: UtensilsCrossed,
+    name: 'Restaurants & cafes',
+    description: 'Front and back of house, split shifts, and last-minute coverage.',
+  },
+  {
+    icon: Store,
+    name: 'Retail',
+    description: 'Stores, malls, and seasonal peaks—one schedule for the whole team.',
+  },
+  {
+    icon: Stethoscope,
+    name: 'Healthcare & clinics',
+    description: 'Nurses, reception, and support staff across shifts and locations.',
+  },
+  {
+    icon: Coffee,
+    name: 'Hospitality',
+    description: 'Hotels, bars, and events with flexible and rotating shifts.',
+  },
+  {
+    icon: Scissors,
+    name: 'Salons & spas',
+    description: 'Appointment-based staff and part-time stylists, same simple tool.',
+  },
+  {
+    icon: Warehouse,
+    name: 'Warehouses & logistics',
+    description: 'Picking, packing, and delivery—day, night, and weekend coverage.',
+  },
+]
 
 export function TestimonialsSection() {
   const [isVisible, setIsVisible] = useState(false)
@@ -26,43 +59,34 @@ export function TestimonialsSection() {
       <div className="container mx-auto px-6 relative z-10">
         <div className="mx-auto max-w-3xl text-center mb-16">
           <span className="inline-block text-amber-400 text-sm font-semibold tracking-wider uppercase mb-4">
-            Why teams switch
+            Built for shift work
           </span>
           <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
-            Managers who got their
-            <span className="block gradient-text">time back</span>
+            Businesses that use
+            <span className="block gradient-text">Shiftely</span>
           </h2>
           <p className="text-lg text-stone-400">
-            Based on feedback from managers using Shiftely—less time on spreadsheets, fewer no-shows, one place for schedules.
+            From restaurants to retail to healthcare—any team that runs on shifts can get organized in minutes.
           </p>
         </div>
 
         <div
-          className={`grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto transition-all duration-700 ${
+          className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto transition-all duration-700 ${
             isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
           }`}
         >
-          <div className="text-center p-8 rounded-2xl glass-card border border-stone-800 hover:border-amber-500/20 transition-colors">
-            <div className="inline-flex h-14 w-14 items-center justify-center rounded-xl bg-amber-500/10 mb-4">
-              <Clock className="h-7 w-7 text-amber-400" />
+          {businesses.map(({ icon: Icon, name, description }) => (
+            <div
+              key={name}
+              className="text-center p-8 rounded-2xl glass-card border border-stone-800 hover:border-amber-500/20 transition-colors"
+            >
+              <div className="inline-flex h-14 w-14 items-center justify-center rounded-xl bg-amber-500/10 mb-4">
+                <Icon className="h-7 w-7 text-amber-400" />
+              </div>
+              <div className="text-xl font-bold text-white mb-2">{name}</div>
+              <p className="text-stone-400 text-sm">{description}</p>
             </div>
-            <div className="text-3xl font-bold gradient-text mb-2">Hours back</div>
-            <p className="text-stone-400 text-sm">every week—no more building schedules from scratch</p>
-          </div>
-          <div className="text-center p-8 rounded-2xl glass-card border border-stone-800 hover:border-amber-500/20 transition-colors">
-            <div className="inline-flex h-14 w-14 items-center justify-center rounded-xl bg-amber-500/10 mb-4">
-              <Zap className="h-7 w-7 text-amber-400" />
-            </div>
-            <div className="text-3xl font-bold gradient-text mb-2">5 min</div>
-            <p className="text-stone-400 text-sm">to your first schedule—no IT, no training</p>
-          </div>
-          <div className="text-center p-8 rounded-2xl glass-card border border-stone-800 hover:border-amber-500/20 transition-colors">
-            <div className="inline-flex h-14 w-14 items-center justify-center rounded-xl bg-amber-500/10 mb-4">
-              <CheckCircle className="h-7 w-7 text-amber-400" />
-            </div>
-            <div className="text-3xl font-bold gradient-text mb-2">Zero</div>
-            <p className="text-stone-400 text-sm">scheduling drama—one source of truth, everyone notified</p>
-          </div>
+          ))}
         </div>
       </div>
     </section>

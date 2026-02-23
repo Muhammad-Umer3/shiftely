@@ -26,6 +26,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return {
     title: `${post.title} | Shiftely Blog`,
     description: post.description,
+    alternates: {
+      canonical: `https://shiftely.com/blog/${slug}`,
+    },
     openGraph: {
       title: `${post.title} | Shiftely Blog`,
       description: post.description,

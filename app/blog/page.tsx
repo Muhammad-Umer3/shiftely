@@ -6,6 +6,9 @@ export const metadata: Metadata = {
   title: 'Blog | Shiftely',
   description:
     'Tips, stories, and updates on how Shiftely helps small businesses solve shift scheduling, coverage, and team management.',
+  alternates: {
+    canonical: 'https://shiftely.com/blog',
+  },
   openGraph: {
     title: 'Blog | Shiftely',
     description:

@@ -4,6 +4,24 @@ import { SchedulerService } from '../scheduler/scheduler.service'
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '')
 
+/** Allocation strategy: preset constraints + prompt appendix for the AI */
+const ALLOCATION_STRATEGIES: Record<
+  string,
+  { constraints: { minEmployeesPerShift?: number; maxHoursPerEmployee?: number }; promptAppendix: string }
+> = {
+  balance_hours: {
+    constraints: { maxHoursPerEmployee: 40 },
+    promptAppendix:
+      'Prioritize balancing workload across the team. Spread shifts fairly so no one is over or under scheduled. Avoid stacking too many shifts on the same people.',
+  },
+  custom: {
+    constraints: {},
+    promptAppendix: '',
+  },
+}
+
+const DEFAULT_STRATEGY = 'balance_hours'
+
 export class AIService {
   /**
    * Generate AI-powered schedule suggestions
@@ -79,7 +97,8 @@ export class AIService {
   }
 
   /**
-   * Generate schedule suggestions from user prompt for an existing schedule
+   * Generate schedule suggestions from user prompt for an existing schedule.
+   * Optional strategy (e.g. 'balance_hours', 'custom') applies preset constraints and prompt guidance.
    */
   static async generateScheduleSuggestionsFromPrompt(
     organizationId: string,
@@ -90,11 +109,20 @@ export class AIService {
       minEmployeesPerShift?: number
       maxHoursPerEmployee?: number
       preferredShifts?: string[]
-    }
+    },
+    strategy?: string
   ) {
     if (!process.env.GEMINI_API_KEY) {
       throw new Error('Gemini API key not configured')
     }
+
+    const strategyId = strategy && ALLOCATION_STRATEGIES[strategy] ? strategy : DEFAULT_STRATEGY
+    const strategyConfig = ALLOCATION_STRATEGIES[strategyId]
+    const mergedConstraints = {
+      ...strategyConfig.constraints,
+      ...constraints,
+    }
+    const promptAppendix = strategyConfig.promptAppendix
 
     const weekEndDate = new Date(weekStartDate)
     weekEndDate.setDate(weekEndDate.getDate() + 6)
@@ -129,12 +157,13 @@ export class AIService {
     const basePrompt = this.buildSchedulePrompt(
       filteredEmployees,
       weekStartDate,
-      constraints,
+      mergedConstraints,
       existingSchedule
     )
-    const fullUserPrompt = userPrompt.trim()
-      ? `${userPrompt}\n\n${basePrompt}`
-      : basePrompt
+    const userPart = userPrompt.trim()
+      ? (promptAppendix ? `${promptAppendix}\n\n${userPrompt.trim()}` : userPrompt.trim())
+      : promptAppendix || ''
+    const fullUserPrompt = userPart ? `${userPart}\n\n${basePrompt}` : basePrompt
 
     try {
       const model = genAI.getGenerativeModel({

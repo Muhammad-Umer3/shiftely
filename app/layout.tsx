@@ -40,6 +40,9 @@ export const metadata: Metadata = {
     title: 'Shiftely - AI-Powered Shift Scheduling for Small Businesses',
     description: 'AI-powered shift scheduling for SMEs. Save hours every week.',
   },
+  verification: {
+    google: process.env.GOOGLE_SITE_VERIFICATION ?? '',
+  },
 }
 
 const jsonLd = {
