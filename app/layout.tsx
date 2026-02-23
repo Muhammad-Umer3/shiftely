@@ -23,22 +23,22 @@ const metadataBase = new URL('https://shiftely.com')
 
 export const metadata: Metadata = {
   metadataBase,
-  title: 'Shiftely - AI-Powered Shift Scheduling for Small Businesses',
-  description: 'AI-powered shift scheduling for SMEs. Add employees, set availability, and let AI generate schedules in minutes. No spreadsheets, no technical skills required.',
-  keywords: 'shift scheduling software, employee scheduling app, workforce management, AI scheduling, staff scheduling, shift management software, free scheduling tool',
+  title: 'Shiftely – Employee & Staff Scheduling Software | Roster Software for Small Business',
+  description: 'Employee scheduling and staff scheduling software that doubles as roster software. AI builds your roster in minutes. Shift swaps, time-off, payroll export. Built for small teams.',
+  keywords: 'employee scheduling software, staff scheduling software, roster software, shift scheduling software, employee scheduling app, workforce management, AI scheduling, staff scheduling, shift management software, free scheduling tool',
   alternates: {
     canonical: 'https://shiftely.com',
   },
   openGraph: {
-    title: 'Shiftely - AI-Powered Shift Scheduling for Small Businesses',
-    description: 'AI-powered shift scheduling for SMEs. Save hours every week. 7-day free trial.',
+    title: 'Shiftely – Employee & Staff Scheduling Software | Roster for Small Business',
+    description: 'Employee scheduling and staff roster software. AI builds your schedule in minutes. 7-day free trial.',
     type: 'website',
     url: 'https://shiftely.com',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Shiftely - AI-Powered Shift Scheduling for Small Businesses',
-    description: 'AI-powered shift scheduling for SMEs. Save hours every week.',
+    title: 'Shiftely – Employee & Staff Scheduling Software | Roster for Small Business',
+    description: 'Employee scheduling and staff roster software. AI builds your schedule in minutes.',
   },
   verification: {
     google: process.env.GOOGLE_SITE_VERIFICATION ?? '',
@@ -53,14 +53,14 @@ const jsonLd = {
       '@id': 'https://shiftely.com/#organization',
       name: 'Shiftely',
       url: 'https://shiftely.com',
-      description: 'AI-powered shift scheduling for small businesses. Generate schedules in minutes, not hours.',
+      description: 'Shiftely is employee scheduling and staff scheduling software (roster software) for small businesses. AI-powered shift and roster scheduling in minutes.',
     },
     {
       '@type': 'SoftwareApplication',
       name: 'Shiftely',
       applicationCategory: 'BusinessApplication',
       operatingSystem: 'Web',
-      description: 'AI-powered shift scheduling for SMEs. Add employees, set availability, and let AI generate schedules in minutes.',
+      description: 'Employee scheduling software and staff scheduling software for small business. Roster software with AI-built schedules, shift swaps, time-off, and payroll export.',
       offers: {
         '@type': 'Offer',
         price: '0',

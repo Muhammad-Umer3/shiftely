@@ -3,16 +3,16 @@ import { getAllPosts } from '@/lib/blog'
 import { PostCard } from '@/components/blog/post-card'
 
 export const metadata: Metadata = {
-  title: 'Blog | Shiftely',
+  title: 'Blog | Shiftely – Employee & Staff Scheduling, Roster Software Tips',
   description:
-    'Tips, stories, and updates on how Shiftely helps small businesses solve shift scheduling, coverage, and team management.',
+    'Tips and guides on employee scheduling software, staff scheduling, and roster software. How Shiftely helps small businesses with shift scheduling and team management.',
   alternates: {
     canonical: 'https://shiftely.com/blog',
   },
   openGraph: {
-    title: 'Blog | Shiftely',
+    title: 'Blog | Shiftely – Employee & Staff Scheduling, Roster Software Tips',
     description:
-      'Tips, stories, and updates on how Shiftely helps small businesses solve shift scheduling and team management.',
+      'Tips on employee scheduling, staff scheduling software, and roster software for small business.',
   },
 }
 
