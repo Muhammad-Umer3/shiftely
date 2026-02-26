@@ -13,10 +13,13 @@ import { Label } from '@/components/ui/label'
 import { toast } from 'sonner'
 import { Users, Plus, Trash2 } from 'lucide-react'
 import { cn } from '@/lib/utils/cn'
+import { getEmployeeDisplayName } from '@/lib/employees'
 
 type Employee = {
   id: string
-  user: { name: string | null; email: string }
+  name?: string | null
+  phone?: string | null
+  user?: { name: string | null; email: string } | null
 }
 
 type Group = {
@@ -176,7 +179,7 @@ export function ManageGroupsDialog({
                           className="rounded border-stone-300"
                         />
                         <span className="text-sm truncate">
-                          {emp.user.name || emp.user.email}
+                          {getEmployeeDisplayName(emp)}
                         </span>
                       </label>
                     ))}

@@ -96,7 +96,7 @@ function buildPrintHtml(schedule: {
     endTime: Date
     position: string | null
     assignments: Array<{
-      employee: { user: { name: string | null; email: string } } | null
+      employee: { name?: string | null; phone?: string | null; user?: { name: string | null; email: string } | null } | null
     }>
   }>
 }) {
@@ -109,7 +109,8 @@ function buildPrintHtml(schedule: {
     slot.assignments
       .filter((a) => a.employee)
       .map((a) => {
-        const name = a.employee?.user?.name || a.employee?.user?.email || '—'
+        const emp = a.employee!
+        const name = emp.user?.name || emp.user?.email || emp.name || emp.phone || '—'
         const start = new Date(slot.startTime)
         const end = new Date(slot.endTime)
         const hours = ((end.getTime() - start.getTime()) / (1000 * 60 * 60)).toFixed(1)

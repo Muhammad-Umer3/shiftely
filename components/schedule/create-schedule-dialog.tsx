@@ -10,46 +10,64 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
-import { format, addDays, startOfWeek, subWeeks } from 'date-fns'
+import { Label } from '@/components/ui/label'
+import { format, addDays, startOfWeek } from 'date-fns'
 import { toast } from 'sonner'
-import { Calendar, Copy } from 'lucide-react'
-import { cn } from '@/lib/utils/cn'
+import { Calendar } from 'lucide-react'
 
 export function CreateScheduleDialog({
   open,
   onOpenChange,
   defaultWeekStart,
+  defaultSeriesId,
   onCreated,
+  isFreeUser,
+  currentWeekStart,
 }: {
   open: boolean
   onOpenChange: (open: boolean) => void
   defaultWeekStart: string
+  defaultSeriesId?: string
   onCreated?: () => void
+  isFreeUser?: boolean
+  currentWeekStart?: string
 }) {
   const router = useRouter()
   const [name, setName] = useState('')
   const [weekStart, setWeekStart] = useState(defaultWeekStart)
-  const [copyFromPrevious, setCopyFromPrevious] = useState(false)
+  const [slotDurationHours, setSlotDurationHours] = useState<number>(1)
+  const [minPeople, setMinPeople] = useState<number | ''>('')
+  const [maxPeople, setMaxPeople] = useState<number | ''>('')
   const [creating, setCreating] = useState(false)
 
   useEffect(() => {
-    setWeekStart(defaultWeekStart)
-  }, [defaultWeekStart, open])
+    setWeekStart(isFreeUser && currentWeekStart ? currentWeekStart : defaultWeekStart)
+  }, [defaultWeekStart, currentWeekStart, isFreeUser, open])
 
-  const weekStartDate = new Date(weekStart)
-  const previousWeekStart = subWeeks(startOfWeek(weekStartDate, { weekStartsOn: 1 }), 1)
-  const sourceWeekStartStr = format(previousWeekStart, 'yyyy-MM-dd')
+  const weekStartForDisplay = isFreeUser && currentWeekStart ? currentWeekStart : weekStart
+  const weekStartDate = new Date(weekStartForDisplay)
 
   const handleCreate = async () => {
     setCreating(true)
     try {
+      const displaySettings: { slotDurationHours?: number; shiftDefaults?: { minPeople?: number; maxPeople?: number } } = {}
+      if ([1, 2, 4].includes(slotDurationHours)) displaySettings.slotDurationHours = slotDurationHours
+      const min = minPeople === '' ? undefined : Number(minPeople)
+      const max = maxPeople === '' ? undefined : Number(maxPeople)
+      if (min !== undefined || max !== undefined) {
+        displaySettings.shiftDefaults = {}
+        if (min !== undefined) displaySettings.shiftDefaults.minPeople = min
+        if (max !== undefined) displaySettings.shiftDefaults.maxPeople = max
+      }
       const createRes = await fetch('/api/schedules', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          weekStartDate: weekStart,
-          autoFill: !copyFromPrevious,
+          weekStartDate: isFreeUser && currentWeekStart ? currentWeekStart : weekStart,
+          autoFill: true,
           name: name.trim() || undefined,
+          ...(defaultSeriesId && { scheduleSeriesId: defaultSeriesId }),
+          ...(Object.keys(displaySettings).length > 0 && { displaySettings }),
         }),
       })
       const createData = await createRes.json()
@@ -64,27 +82,7 @@ export function CreateScheduleDialog({
         return
       }
 
-      if (copyFromPrevious) {
-        const copyRes = await fetch('/api/schedules/copy', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            targetWeekStart: weekStart,
-            sourceWeekStart: sourceWeekStartStr,
-          }),
-        })
-        const copyData = await copyRes.json()
-        if (copyRes.ok) {
-          toast.success(
-            copyData.copiedCount > 0
-              ? `Schedule created with ${copyData.copiedCount} shifts copied from previous week`
-              : 'Schedule created. No shifts to copy from previous week.'
-          )
-        } else {
-          toast.success('Schedule created.')
-          if (copyData.message) toast.info(copyData.message)
-        }
-      } else if (createRes.status === 201 && createData.schedule?.id) {
+      if (createRes.status === 201 && createData.schedule?.id) {
         toast.success('Schedule created successfully!')
       } else if (createData.existing && createData.schedule?.id) {
         toast.info('Schedule already exists for this week.')
@@ -108,82 +106,98 @@ export function CreateScheduleDialog({
 
   const weekEndDate = addDays(weekStartDate, 6)
   const weekLabel = `${format(weekStartDate, 'MMM d')} – ${format(weekEndDate, 'MMM d')}, ${format(weekStartDate, 'yyyy')}`
-  const sourceWeekLabel = `${format(previousWeekStart, 'MMM d')} – ${format(addDays(previousWeekStart, 6), 'MMM d')}, ${format(previousWeekStart, 'yyyy')}`
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md max-h-[90vh] flex flex-col">
         <DialogHeader>
           <DialogTitle>Create schedule</DialogTitle>
         </DialogHeader>
-        <div className="space-y-4">
-          <div>
-            <label className="text-sm font-medium text-stone-700 block mb-1">Name (optional)</label>
-            <input
-              type="text"
-              placeholder="e.g. Front of House, Kitchen Team"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="w-full border border-stone-200 rounded-lg px-3 py-2 text-stone-900 bg-white focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
-            />
-          </div>
+        <div className="space-y-4 overflow-y-auto min-h-0 pr-1">
+          {!defaultSeriesId && (
+            <div>
+              <label className="text-sm font-medium text-stone-700 block mb-1">Name (optional)</label>
+              <input
+                type="text"
+                placeholder="e.g. Front of House, Kitchen Team"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="w-full border border-stone-200 rounded-lg px-3 py-2 text-stone-900 bg-white focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
+              />
+            </div>
+          )}
+          {defaultSeriesId && (
+            <p className="text-sm text-stone-600">Adding a new week to this schedule.</p>
+          )}
 
           <div>
             <label className="text-sm font-medium text-stone-700 block mb-1">Week starting (Monday)</label>
             <input
               type="date"
-              value={weekStart}
+              value={weekStartForDisplay}
               onChange={(e) => {
+                if (isFreeUser) return
                 const d = new Date(e.target.value)
                 const monday = startOfWeek(d, { weekStartsOn: 1 })
                 setWeekStart(format(monday, 'yyyy-MM-dd'))
               }}
-              className="w-full border border-stone-200 rounded-lg px-3 py-2 text-stone-900 bg-white focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
+              disabled={isFreeUser}
+              className="w-full border border-stone-200 rounded-lg px-3 py-2 text-stone-900 bg-white focus:ring-2 focus:ring-amber-500 focus:border-amber-500 disabled:bg-stone-100 disabled:cursor-not-allowed"
             />
             <p className="text-xs text-stone-500 mt-1 flex items-center gap-1">
               <Calendar className="h-3 w-3" />
               {weekLabel}
             </p>
+            {isFreeUser && (
+              <p className="text-xs text-amber-700 mt-1">Free plan: current week only.</p>
+            )}
           </div>
 
-          <div className="border border-stone-200 rounded-lg p-3 bg-stone-50/50">
-            <label
-              className={cn(
-                'flex items-start gap-3 cursor-pointer',
-                copyFromPrevious && 'text-amber-700'
-              )}
+          <div>
+            <Label className="text-sm font-medium text-stone-700 block mb-1">Slot duration</Label>
+            <select
+              value={slotDurationHours}
+              onChange={(e) => setSlotDurationHours(Number(e.target.value))}
+              className="w-full border border-stone-200 rounded-lg px-3 py-2 text-stone-900 bg-white focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
             >
-              <input
-                type="checkbox"
-                checked={copyFromPrevious}
-                onChange={(e) => setCopyFromPrevious(e.target.checked)}
-                className="mt-0.5 rounded border-stone-300 text-amber-600 focus:ring-amber-500"
-              />
-              <div>
-                <span className="flex items-center gap-1.5 font-medium text-stone-800">
-                  <Copy className="h-4 w-4 text-amber-600" />
-                  Copy shifts from previous week
-                </span>
-                <p className="text-xs text-stone-500 mt-1">
-                  {copyFromPrevious
-                    ? `Shifts from ${sourceWeekLabel} will be copied into this schedule.`
-                    : 'Create an empty schedule (or use auto-fill to add placeholder shifts).'}
-                </p>
-              </div>
-            </label>
+              <option value={1}>1 hour</option>
+              <option value={2}>2 hours</option>
+              <option value={4}>4 hours</option>
+            </select>
+            <p className="text-xs text-stone-500 mt-1">Length of each shift when adding to the calendar. Cannot be changed later.</p>
           </div>
 
-          <div className="rounded-lg border border-amber-200 bg-amber-50/80 px-3 py-2.5 text-sm text-amber-900">
-            <p className="font-medium mb-0.5">Note</p>
-            <p className="text-xs text-amber-800">
-              Display hours and min/max people per shift cannot be changed after the schedule is created. They are set from your organization defaults. Use Settings to change defaults before creating if needed.
-            </p>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Label className="text-sm font-medium text-stone-700 block mb-1">Min people per shift (optional)</Label>
+              <input
+                type="number"
+                min={1}
+                placeholder="—"
+                value={minPeople === '' ? '' : minPeople}
+                onChange={(e) => setMinPeople(e.target.value === '' ? '' : Math.max(1, parseInt(e.target.value, 10) || 1))}
+                className="w-full border border-stone-200 rounded-lg px-3 py-2 text-stone-900 bg-white focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
+              />
+            </div>
+            <div>
+              <Label className="text-sm font-medium text-stone-700 block mb-1">Max people per shift (optional)</Label>
+              <input
+                type="number"
+                min={1}
+                placeholder="—"
+                value={maxPeople === '' ? '' : maxPeople}
+                onChange={(e) => setMaxPeople(e.target.value === '' ? '' : Math.max(1, parseInt(e.target.value, 10) || 1))}
+                className="w-full border border-stone-200 rounded-lg px-3 py-2 text-stone-900 bg-white focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
+              />
+            </div>
           </div>
+          <p className="text-xs text-stone-500">Min/max cannot be changed after creation.</p>
+
           <p className="text-xs text-stone-500">
             After creating, use Edit schedule to choose which groups to display in the calendar.
           </p>
         </div>
-        <DialogFooter>
+        <DialogFooter className="shrink-0">
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
@@ -192,7 +206,7 @@ export function CreateScheduleDialog({
             disabled={creating}
             className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-stone-950 font-semibold"
           >
-            {creating ? 'Creating...' : copyFromPrevious ? 'Create & copy' : 'Create schedule'}
+            {creating ? 'Creating...' : 'Create schedule'}
           </Button>
         </DialogFooter>
       </DialogContent>

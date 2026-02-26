@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button'
 export function TrialEndedBanner() {
   return (
     <div className="bg-amber-600 text-white px-4 py-3 text-center text-sm">
-      Your Pro trial has ended. Choose a plan to keep access to premium features.
+      Your free trial has ended. Choose a plan to keep access to premium features.
       <Button
         asChild
         variant="secondary"

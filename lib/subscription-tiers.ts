@@ -6,7 +6,7 @@ export const SUBSCRIPTION_TIERS = {
     employeeLimit: 5,
     scheduleLimit: 1,
     features: [
-      'AI builds your schedule in minutes',
+      'Build your schedule manually',
       'Email & WhatsApp notifications—fewer no-shows',
       'CSV export for payroll',
       'Overtime & conflict warnings',
@@ -22,6 +22,7 @@ export const SUBSCRIPTION_TIERS = {
     scheduleLimit: null,
     features: [
       'Everything in Free',
+      'AI builds your schedule in minutes',
       'Up to 15 employees',
       'Unlimited schedules',
       'Shift swap requests—approve in one click',
@@ -29,7 +30,7 @@ export const SUBSCRIPTION_TIERS = {
   },
   PRO: {
     name: 'Pro',
-    price: 79,
+    price: 69,
     employeeLimit: 100,
     scheduleLimit: null,
     features: [

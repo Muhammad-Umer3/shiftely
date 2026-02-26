@@ -7,18 +7,21 @@ import { Button } from '@/components/ui/button'
 import { GroupEditDialog } from './group-edit-dialog'
 import { Users, UsersRound, Pencil, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
+import { getEmployeeDisplayName, getEmployeeDisplayContact } from '@/lib/employees'
 
 type Employee = {
   id: string
+  name?: string | null
+  phone?: string | null
   roleType: string | null
   hourlyRate: { toString: () => string } | null
-  user: { name: string | null; email: string; phone: string | null }
+  user: { name: string | null; email: string; phone: string | null } | null
 }
 
 type Group = {
   id: string
   name: string
-  members: { employee: { id: string; user: { name: string | null; email: string } } }[]
+  members: { employee: { id: string; name?: string | null; phone?: string | null; user: { name: string | null; email: string } | null } }[]
 }
 
 export function EmployeesAndGroups({
@@ -160,9 +163,9 @@ export function EmployeesAndGroups({
               <thead className="bg-stone-50 border-b border-stone-200">
                 <tr>
                   <th className="text-left py-3 px-4 font-medium text-stone-700">Name</th>
-                  <th className="text-left py-3 px-4 font-medium text-stone-700">Email</th>
+                  <th className="text-left py-3 px-4 font-medium text-stone-700">Contact</th>
                   <th className="text-left py-3 px-4 font-medium text-stone-700">Role</th>
-                  <th className="text-right py-3 px-4 font-medium text-stone-700 w-28">Actions</th>
+                  <th className="text-right py-3 px-4 font-medium text-stone-700 min-w-[140px]">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -172,16 +175,32 @@ export function EmployeesAndGroups({
                     className="border-b border-stone-100 last:border-0 hover:bg-stone-50/50"
                   >
                     <td className="py-3 px-4 font-medium text-stone-900">
-                      {employee.user.name || 'Unnamed'}
+                      <span className="flex items-center gap-2">
+                        {getEmployeeDisplayName(employee)}
+                        {!employee.user && (
+                          <span className="inline-flex items-center rounded-md bg-stone-100 px-1.5 py-0.5 text-xs font-medium text-stone-600">
+                            No account
+                          </span>
+                        )}
+                      </span>
                     </td>
-                    <td className="py-3 px-4 text-stone-600">{employee.user.email}</td>
+                    <td className="py-3 px-4 text-stone-600">{getEmployeeDisplayContact(employee)}</td>
                     <td className="py-3 px-4 text-stone-600">{employee.roleType || '—'}</td>
                     <td className="py-3 px-4 text-right">
-                      <Link href={`/employees/${employee.id}`}>
-                        <Button variant="outline" size="sm" className="border-stone-300">
-                          View
-                        </Button>
-                      </Link>
+                      <span className="flex items-center justify-end gap-2">
+                        {!employee.user && (
+                          <Link href="/employees/invite" className="shrink-0">
+                            <Button variant="ghost" size="sm" className="text-amber-600 hover:text-amber-700 hover:bg-amber-50 whitespace-nowrap">
+                              Invite to log in
+                            </Button>
+                          </Link>
+                        )}
+                        <Link href={`/employees/${employee.id}`} className="shrink-0">
+                          <Button variant="outline" size="sm" className="border-stone-300">
+                            View
+                          </Button>
+                        </Link>
+                      </span>
                     </td>
                   </tr>
                 ))}
@@ -202,7 +221,9 @@ export function EmployeesAndGroups({
         group={editGroup}
         employees={initialEmployees.map((e) => ({
           id: e.id,
-          user: { name: e.user.name, email: e.user.email },
+          user: e.user ? { name: e.user.name, email: e.user.email } : null,
+          name: e.name,
+          phone: e.phone,
         }))}
         onSaved={handleSaved}
       />

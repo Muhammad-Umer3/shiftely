@@ -12,10 +12,12 @@ type SlotSwap = {
     endTime: Date
     assignments: {
       employee: {
-        user: {
+        name?: string | null
+        phone?: string | null
+        user?: {
           name: string | null
           email: string
-        }
+        } | null
       } | null
     }[]
   }

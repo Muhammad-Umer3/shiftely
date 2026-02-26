@@ -12,12 +12,14 @@ export async function POST(req: NextRequest) {
   try {
     const user = await requireAuth()
     const body = await req.json()
-    const { weekStartDate, autoFill, name } = body
+    const { weekStartDate, autoFill, name, displaySettings: bodyDisplay, scheduleSeriesId } = body
 
     const weekStart = weekStartDate ? new Date(weekStartDate) : startOfWeek(new Date(), { weekStartsOn: 1 })
 
-    // Check if schedule already exists
-    const existing = await SchedulerService.getScheduleForWeek(user.organizationId, weekStart)
+    // Check if schedule already exists (by series+week if seriesId provided, else org+week)
+    const existing = scheduleSeriesId
+      ? await SchedulerService.getScheduleForSeriesAndWeek(user.organizationId, scheduleSeriesId, weekStart)
+      : await SchedulerService.getScheduleForWeek(user.organizationId, weekStart)
     if (existing) {
       return NextResponse.json({ schedule: existing, existing: true }, { status: 200 })
     }
@@ -34,13 +36,31 @@ export async function POST(req: NextRequest) {
       )
     }
 
+    // Free plan: only current week
+    const canCreateForWeek = await SubscriptionService.canCreateScheduleForWeek(user.organizationId, weekStart)
+    if (!canCreateForWeek) {
+      return NextResponse.json(
+        { message: 'Free plan: you can only create schedules for the current week.' },
+        { status: 403 }
+      )
+    }
+
     const org = await prisma.organization.findUnique({ where: { id: user.organizationId } })
     const orgSettings = (org?.settings as Record<string, unknown>) ?? {}
     const scheduleSettings = (orgSettings.scheduleSettings as { startHour?: number; endHour?: number; workingDays?: number[] }) ?? {}
+    const shiftDef = bodyDisplay?.shiftDefaults
+    const slotDurationHours = [1, 2, 4].includes(Number(bodyDisplay?.slotDurationHours)) ? Number(bodyDisplay.slotDurationHours) : undefined
     const displaySettings = {
       startHour: scheduleSettings.startHour ?? DEFAULT_DISPLAY.startHour,
       endHour: scheduleSettings.endHour ?? DEFAULT_DISPLAY.endHour,
       workingDays: Array.isArray(scheduleSettings.workingDays) ? scheduleSettings.workingDays : DEFAULT_DISPLAY.workingDays,
+      ...(slotDurationHours !== undefined && { slotDurationHours }),
+      ...(shiftDef && (typeof shiftDef.minPeople === 'number' || typeof shiftDef.maxPeople === 'number') && {
+        shiftDefaults: {
+          ...(typeof shiftDef.minPeople === 'number' && { minPeople: shiftDef.minPeople }),
+          ...(typeof shiftDef.maxPeople === 'number' && { maxPeople: shiftDef.maxPeople }),
+        },
+      }),
     }
 
     const schedule = await SchedulerService.createSchedule(
@@ -50,6 +70,7 @@ export async function POST(req: NextRequest) {
       {
         name: typeof name === 'string' ? name : undefined,
         displaySettings,
+        scheduleSeriesId: typeof scheduleSeriesId === 'string' ? scheduleSeriesId : undefined,
       }
     )
 
@@ -76,8 +97,15 @@ export async function GET(req: NextRequest) {
     const user = await requireAuth()
     const { searchParams } = new URL(req.url)
     const weekStartDate = searchParams.get('weekStartDate')
+    const scheduleSeriesId = searchParams.get('scheduleSeriesId')
     const list = searchParams.get('list') === 'true'
+    const listSeries = searchParams.get('list') === 'series'
     const month = searchParams.get('month')
+
+    if (listSeries) {
+      const series = await SchedulerService.listScheduleSeries(user.organizationId)
+      return NextResponse.json({ series }, { status: 200 })
+    }
 
     if (list) {
       let schedules = await SchedulerService.listSchedules(user.organizationId)
@@ -111,7 +139,14 @@ export async function GET(req: NextRequest) {
       ? new Date(weekStartDate)
       : startOfWeek(new Date(), { weekStartsOn: 1 })
 
-    const schedule = await SchedulerService.getScheduleForWeek(user.organizationId, weekStart)
+    const schedule =
+      scheduleSeriesId
+        ? await SchedulerService.getScheduleForSeriesAndWeek(
+            user.organizationId,
+            scheduleSeriesId,
+            weekStart
+          )
+        : await SchedulerService.getScheduleForWeek(user.organizationId, weekStart)
 
     return NextResponse.json({ schedule }, { status: 200 })
   } catch (error) {

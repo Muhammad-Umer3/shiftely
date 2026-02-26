@@ -4,6 +4,8 @@ import { useDraggable } from '@dnd-kit/core'
 import { EmployeeAvatar } from './employee-avatar'
 import { cn } from '@/lib/utils/cn'
 import { getEmployeeColor } from './employee-colors'
+import { getEmployeeDisplayName, getEmployeeDisplayContact } from '@/lib/employees'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 
 const EMPLOYEE_DRAG_PREFIX = 'employee:'
 
@@ -25,7 +27,9 @@ export function getEmployeeIdFromDragId(id: string): string | null {
 
 type Employee = {
   id: string
-  user: { name: string | null; email: string }
+  name?: string | null
+  phone?: string | null
+  user?: { name: string | null; email: string } | null
 }
 
 export function DraggableEmployee({
@@ -53,7 +57,9 @@ export function DraggableEmployee({
   const available = hoursAvailable ?? 40
   const pct = available > 0 ? Math.min(1, consumed / available) : 0
 
-  return (
+  const displayName = getEmployeeDisplayName(employee)
+  const displayContact = getEmployeeDisplayContact(employee)
+  const inner = (
     <div
       ref={setNodeRef}
       {...(disabled ? {} : { ...attributes, ...listeners })}
@@ -62,12 +68,11 @@ export function DraggableEmployee({
         isDragging && 'opacity-50',
         disabled && 'cursor-not-allowed opacity-60'
       )}
-      title={employee.user.name || employee.user.email}
     >
       <div className={cn('flex items-center gap-2 text-sm text-stone-700 truncate cursor-grab active:cursor-grabbing', !disabled && 'cursor-grab')}>
         <div className={cn('w-1.5 h-6 rounded-full shrink-0', color.bg)} aria-hidden />
-        <EmployeeAvatar name={employee.user.name} email={employee.user.email} size="sm" />
-        <span className="truncate">{employee.user.name || employee.user.email}</span>
+        <EmployeeAvatar name={displayName !== 'Unnamed' ? displayName : null} email={displayContact} size="sm" />
+        <span className="truncate">{displayName}</span>
       </div>
       {showBar && (
         <div className="flex items-center gap-1.5 pl-5">
@@ -83,5 +88,14 @@ export function DraggableEmployee({
         </div>
       )}
     </div>
+  )
+
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>{inner}</TooltipTrigger>
+      <TooltipContent side="right" sideOffset={8}>
+        {displayName}
+      </TooltipContent>
+    </Tooltip>
   )
 }

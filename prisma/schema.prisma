@@ -83,6 +83,7 @@ model Organization {
   employeeLeaves    EmployeeLeave[]
   employeeGroups   EmployeeGroup[]
   events           Event[]
+  scheduleSeries   ScheduleSeries[]
 
   @@map("organizations")
 }
@@ -123,8 +124,10 @@ model User {
 
 model Employee {
   id                   String   @id @default(cuid())
-  userId               String   @unique
+  userId               String?  @unique
   organizationId       String
+  name                 String?
+  phone                String?
   roleType             String?
   hourlyRate           Decimal? @db.Decimal(10, 2)
   defaultHoursPerWeek  Int?     @default(40)
@@ -133,7 +136,7 @@ model Employee {
   createdAt            DateTime @default(now())
   updatedAt            DateTime @updatedAt
 
-  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user             User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
   organization      Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   slotAssignments   SlotAssignment[]
   availabilityRequests AvailabilityRequest[]
@@ -216,9 +219,25 @@ model Event {
   @@map("events")
 }
 
+model ScheduleSeries {
+  id              String   @id @default(cuid())
+  organizationId  String
+  name            String
+  displaySettings Json?    @default("{}")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  schedules     Schedule[]
+
+  @@index([organizationId])
+  @@map("schedule_series")
+}
+
 model Schedule {
   id              String         @id @default(cuid())
   organizationId  String
+  scheduleSeriesId String?       // when type = WEEK; groups weekly schedules
   type            ScheduleType   @default(WEEK)
   weekStartDate   DateTime?      // when type = WEEK
   eventId         String?        // when type = EVENT
@@ -233,6 +252,7 @@ model Schedule {
   updatedAt      DateTime       @updatedAt
 
   organization   Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  series         ScheduleSeries? @relation(fields: [scheduleSeriesId], references: [id], onDelete: SetNull)
   createdBy      User            @relation("ScheduleCreator", fields: [createdById], references: [id])
   event          Event?          @relation(fields: [eventId], references: [id], onDelete: SetNull)
   slots          Slot[]
@@ -240,6 +260,7 @@ model Schedule {
   chatMessages   ScheduleChatMessage[]
 
   @@index([organizationId])
+  @@index([scheduleSeriesId])
   @@index([weekStartDate])
   @@index([eventId])
   @@map("schedules")

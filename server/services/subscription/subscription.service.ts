@@ -1,17 +1,25 @@
+import { startOfWeek } from 'date-fns'
 import { prisma } from '@/lib/db/prisma'
 import { SUBSCRIPTION_TIERS } from '@/lib/stripe'
 
 type TierKey = keyof typeof SUBSCRIPTION_TIERS
 
+/** Monday-based week; returns true if the given week start is the week containing today. */
+function isCurrentWeek(weekStartDate: Date): boolean {
+  const normalized = startOfWeek(new Date(weekStartDate), { weekStartsOn: 1 })
+  const todayStart = startOfWeek(new Date(), { weekStartsOn: 1 })
+  return normalized.getTime() === todayStart.getTime()
+}
+
 /**
- * Effective tier: Pro during active trial, otherwise stored subscriptionTier
+ * Effective tier: Growth during active trial, otherwise stored subscriptionTier
  */
 function getEffectiveTier(
   subscriptionTier: string,
   trialEndsAt: Date | null
 ): TierKey {
   if (trialEndsAt && new Date() < trialEndsAt) {
-    return 'PRO'
+    return 'GROWTH'
   }
   return subscriptionTier as TierKey
 }
@@ -99,6 +107,30 @@ export class SubscriptionService {
         : `You've reached the schedule limit for your ${info.tierInfo.name} plan (${info.scheduleLimit} active schedules).`,
       upgradeRequired: true,
     }
+  }
+
+  /**
+   * Free plan: only current week. Paid: any week.
+   */
+  static async canCreateScheduleForWeek(
+    organizationId: string,
+    weekStartDate: Date
+  ): Promise<boolean> {
+    const info = await this.getSubscriptionInfo(organizationId)
+    if (info.tier !== 'FREE') return true
+    return isCurrentWeek(weekStartDate)
+  }
+
+  /**
+   * Free plan: only current week editable. Paid: any week.
+   */
+  static async canEditScheduleForWeek(
+    organizationId: string,
+    weekStartDate: Date
+  ): Promise<boolean> {
+    const info = await this.getSubscriptionInfo(organizationId)
+    if (info.tier !== 'FREE') return true
+    return isCurrentWeek(weekStartDate)
   }
 
   /**

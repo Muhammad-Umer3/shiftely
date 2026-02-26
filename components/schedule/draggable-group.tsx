@@ -22,7 +22,9 @@ export function getGroupIdFromDragId(id: string): string | null {
 
 export type GroupEmployee = {
   id: string
-  user: { name: string | null; email: string }
+  name?: string | null
+  phone?: string | null
+  user?: { name: string | null; email: string } | null
 }
 
 export type Group = {

@@ -1,18 +1,21 @@
 'use client'
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { UnavailabilitySlots } from '@/components/employees/unavailability-slots'
 import { EmployeeDailyView } from '@/components/employees/employee-daily-view'
 import { EmployeeLeavesList } from '@/components/employees/employee-leaves-list'
+import Link from 'next/link'
+import { Button } from '@/components/ui/button'
 
 type EmployeeWithUser = {
   id: string
-  user: {
+  name?: string | null
+  phone?: string | null
+  user?: {
     id: string
     name: string | null
     email: string
     phone: string | null
-  }
+  } | null
   roleType: string | null
   hourlyRate: number | null
   defaultHoursPerWeek?: number | null
@@ -25,22 +28,44 @@ type EmployeeWithUser = {
 }
 
 export function EmployeeProfile({ employee }: { employee: EmployeeWithUser }) {
+  const hasUser = !!employee.user
   return (
-    <div className="grid gap-6 md:grid-cols-2">
+    <div className="space-y-8">
       <Card className="border-stone-200 bg-white">
-        <CardHeader>
+        <CardHeader className="pb-2">
           <CardTitle className="text-stone-900">Employee Details</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div>
-            <p className="text-sm font-medium text-stone-600">Email</p>
-            <p className="text-lg text-stone-900">{employee.user.email}</p>
-          </div>
-          {employee.user.phone && (
-            <div>
-              <p className="text-sm font-medium text-stone-600">Phone</p>
-              <p className="text-lg text-stone-900">{employee.user.phone}</p>
-            </div>
+        <CardContent className="space-y-5">
+          {hasUser ? (
+            <>
+              <div>
+                <p className="text-sm font-medium text-stone-600">Email</p>
+                <p className="text-lg text-stone-900">{employee.user!.email}</p>
+              </div>
+              {(employee.user!.phone || employee.phone) && (
+                <div>
+                  <p className="text-sm font-medium text-stone-600">Phone</p>
+                  <p className="text-lg text-stone-900">{employee.user!.phone || employee.phone}</p>
+                </div>
+              )}
+            </>
+          ) : (
+            <>
+              <div>
+                <p className="text-sm font-medium text-stone-600">Phone</p>
+                <p className="text-lg text-stone-900">{employee.phone ?? '—'}</p>
+              </div>
+              <div className="space-y-3 pt-1">
+                <p className="text-sm text-stone-600">
+                  No login yet — they get shift updates via WhatsApp. Send them an invite so they can log in and see their schedule.
+                </p>
+                <Link href="/employees/invite">
+                  <Button variant="outline" size="sm" className="border-stone-300">
+                    Send login invite
+                  </Button>
+                </Link>
+              </div>
+            </>
           )}
           {employee.roleType && (
             <div>
@@ -62,41 +87,31 @@ export function EmployeeProfile({ employee }: { employee: EmployeeWithUser }) {
       </Card>
 
       <Card className="border-stone-200 bg-white">
-        <CardHeader>
-          <CardTitle className="text-stone-900">Unavailable Slots</CardTitle>
-          <CardDescription className="text-stone-600">Mark times when this employee is not available to work</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <UnavailabilitySlots employeeId={employee.id} />
-        </CardContent>
-      </Card>
-
-      <Card className="md:col-span-2 border-stone-200 bg-white">
-        <CardHeader>
+        <CardHeader className="pb-2">
           <CardTitle className="text-stone-900">Daily View</CardTitle>
           <CardDescription className="text-stone-600">Shifts and leaves for this employee</CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="pt-0">
           <EmployeeDailyView employeeId={employee.id} />
         </CardContent>
       </Card>
 
-      <Card className="md:col-span-2 border-stone-200 bg-white">
-        <CardHeader>
-          <CardTitle className="text-stone-900">Upcoming Leaves</CardTitle>
+      <Card className="border-stone-200 bg-white">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-stone-900">Upcoming Days Off</CardTitle>
           <CardDescription className="text-stone-600">Time off that will be considered when scheduling</CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="pt-0">
           <EmployeeLeavesList employeeId={employee.id} />
         </CardContent>
       </Card>
 
       {employee.shifts && employee.shifts.length > 0 && (
-        <Card className="md:col-span-2 border-stone-200 bg-white">
-          <CardHeader>
+        <Card className="border-stone-200 bg-white">
+          <CardHeader className="pb-2">
             <CardTitle className="text-stone-900">Recent Shifts</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="pt-0">
             <div className="space-y-2">
               {employee.shifts?.map((shift) => (
                 <div key={shift.id} className="flex items-center justify-between p-3 border border-stone-200 rounded-lg bg-stone-50/50">

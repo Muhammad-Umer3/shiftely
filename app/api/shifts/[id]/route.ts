@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAuth } from '@/lib/utils/auth'
 import { prisma } from '@/lib/db/prisma'
+import { SubscriptionService } from '@/server/services/subscription/subscription.service'
 
 export async function DELETE(
   req: NextRequest,
@@ -15,10 +16,23 @@ export async function DELETE(
         id,
         organizationId: user.organizationId,
       },
+      include: { schedule: { select: { weekStartDate: true } } },
     })
 
     if (!slot) {
       return NextResponse.json({ message: 'Slot not found' }, { status: 404 })
+    }
+    if (slot.schedule?.weekStartDate) {
+      const canEdit = await SubscriptionService.canEditScheduleForWeek(
+        user.organizationId,
+        new Date(slot.schedule.weekStartDate)
+      )
+      if (!canEdit) {
+        return NextResponse.json(
+          { message: 'Free plan: you can only edit schedules for the current week.' },
+          { status: 403 }
+        )
+      }
     }
 
     await prisma.slot.delete({

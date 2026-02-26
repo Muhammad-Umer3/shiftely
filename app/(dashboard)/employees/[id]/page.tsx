@@ -2,6 +2,7 @@ import { requireAuth } from '@/lib/utils/auth'
 import { prisma } from '@/lib/db/prisma'
 import { notFound } from 'next/navigation'
 import { EmployeeProfile } from '@/components/employees/employee-profile'
+import { getEmployeeDisplayName, getEmployeeDisplayContact } from '@/lib/employees'
 
 export default async function EmployeeDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const user = await requireAuth()
@@ -40,10 +41,12 @@ export default async function EmployeeDetailPage({ params }: { params: Promise<{
   }
 
   return (
-    <div className="space-y-6 text-stone-900">
-      <div>
-        <h1 className="text-3xl font-bold text-stone-900">{employee.user.name || 'Employee'}</h1>
-        <p className="text-stone-600 mt-1">{employee.user.email}</p>
+    <div className="space-y-8 text-stone-900">
+      <div className="pb-2">
+        <h1 className="text-3xl font-bold text-stone-900">{getEmployeeDisplayName(employee)}</h1>
+        <p className="text-stone-600 mt-1.5">
+          {employee.user ? employee.user.email : (employee.phone ? `Phone: ${employee.phone}` : 'No account — invite to create one')}
+        </p>
       </div>
 
       <EmployeeProfile employee={employeeForComponent} />

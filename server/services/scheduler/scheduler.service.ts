@@ -5,22 +5,50 @@ import { generateScheduleSlug } from '@/lib/schedule-slug'
 
 export class SchedulerService {
   /**
-   * Create a new schedule for a week
+   * Create a new schedule for a week. If scheduleSeriesId is provided, adds week to that series;
+   * otherwise creates a new ScheduleSeries (name from options or "Untitled") and the first week.
    */
   static async createSchedule(
     organizationId: string,
     weekStartDate: Date,
     createdById: string,
-    options?: { name?: string; displaySettings?: { startHour: number; endHour: number; workingDays: number[] } }
+    options?: {
+      name?: string
+      displaySettings?: { startHour: number; endHour: number; workingDays: number[] }
+      scheduleSeriesId?: string
+    }
   ) {
+    let scheduleSeriesId: string
+    let seriesName: string
+
+    if (options?.scheduleSeriesId) {
+      const series = await prisma.scheduleSeries.findFirst({
+        where: { id: options.scheduleSeriesId, organizationId },
+      })
+      if (!series) throw new Error('Schedule series not found')
+      scheduleSeriesId = series.id
+      seriesName = series.name
+    } else {
+      const series = await prisma.scheduleSeries.create({
+        data: {
+          organizationId,
+          name: (options?.name?.trim() || 'Untitled').slice(0, 255),
+          displaySettings: options?.displaySettings ? (options.displaySettings as object) : undefined,
+        },
+      })
+      scheduleSeriesId = series.id
+      seriesName = series.name
+    }
+
     const schedule = await prisma.schedule.create({
       data: {
         organizationId,
+        scheduleSeriesId,
         type: 'WEEK',
         weekStartDate,
         status: 'DRAFT',
         createdById,
-        name: options?.name ?? null,
+        name: seriesName,
         displaySettings: options?.displaySettings ? (options.displaySettings as object) : undefined,
       },
     })
@@ -179,7 +207,7 @@ export class SchedulerService {
   }
 
   /**
-   * Get schedule for a specific week
+   * Get schedule for a specific week (any series)
    */
   static async getScheduleForWeek(organizationId: string, weekStartDate: Date) {
     const schedule = await prisma.schedule.findFirst({
@@ -204,6 +232,65 @@ export class SchedulerService {
     })
 
     return schedule
+  }
+
+  /**
+   * Get schedule for a specific series and week (with org check). Used for week nav within same series.
+   */
+  static async getScheduleForSeriesAndWeek(
+    organizationId: string,
+    scheduleSeriesId: string,
+    weekStartDate: Date
+  ) {
+    const schedule = await prisma.schedule.findFirst({
+      where: {
+        organizationId,
+        scheduleSeriesId,
+        type: 'WEEK',
+        weekStartDate,
+      },
+      include: {
+        slots: {
+          include: {
+            assignments: {
+              include: {
+                employee: {
+                  include: { user: true },
+                },
+              },
+            },
+          },
+        },
+      },
+    })
+    return schedule
+  }
+
+  /**
+   * List schedule series for an organization (each with latest week for default link and schedule count)
+   */
+  static async listScheduleSeries(organizationId: string) {
+    const series = await prisma.scheduleSeries.findMany({
+      where: { organizationId },
+      orderBy: { updatedAt: 'desc' },
+      include: {
+        schedules: {
+          orderBy: { weekStartDate: 'desc' },
+          take: 1,
+          select: { id: true, slug: true, weekStartDate: true },
+        },
+        _count: { select: { schedules: true } },
+      },
+    })
+    return series.map((s) => ({
+      id: s.id,
+      name: s.name,
+      displaySettings: s.displaySettings,
+      createdAt: s.createdAt,
+      updatedAt: s.updatedAt,
+      latestSchedule: s.schedules[0] ?? null,
+      scheduleCount: s._count.schedules,
+    }))
   }
 
   /**
@@ -301,11 +388,16 @@ export class SchedulerService {
     const dayOffset =
       (targetStart.getTime() - sourceStart.getTime()) / (1000 * 60 * 60 * 24)
 
-    let targetSchedule = await this.getScheduleForWeek(organizationId, targetWeekStart)
-    if (!targetSchedule) {
+    const seriesId = sourceSchedule.scheduleSeriesId
+    const targetSchedule = seriesId
+      ? await this.getScheduleForSeriesAndWeek(organizationId, seriesId, targetWeekStart)
+      : await this.getScheduleForWeek(organizationId, targetWeekStart)
+    let targetScheduleRes = targetSchedule
+    if (!targetScheduleRes) {
       const created = await prisma.schedule.create({
         data: {
           organizationId,
+          scheduleSeriesId: seriesId ?? undefined,
           type: 'WEEK',
           weekStartDate: targetStart,
           status: 'DRAFT',
@@ -330,16 +422,18 @@ export class SchedulerService {
         where: { id: created.id },
         data: { slug },
       })
-      targetSchedule = { ...created, slug } as NonNullable<Awaited<ReturnType<typeof this.getScheduleForWeek>>>
+      targetScheduleRes = { ...created, slug } as NonNullable<
+        Awaited<ReturnType<typeof this.getScheduleForWeek>>
+      >
     } else {
       // Clear existing slots when replacing
-      for (const slot of targetSchedule.slots) {
+      for (const slot of targetScheduleRes.slots) {
         await prisma.slotAssignment.deleteMany({ where: { slotId: slot.id } })
         await prisma.slot.delete({ where: { id: slot.id } })
       }
     }
 
-    const targetScheduleId = targetSchedule.id
+    const targetScheduleId = targetScheduleRes.id
     let copiedCount = 0
     for (const sourceSlot of sourceSchedule.slots) {
       const oldStart = new Date(sourceSlot.startTime)
@@ -376,7 +470,9 @@ export class SchedulerService {
     }
 
     return {
-      schedule: await this.getScheduleForWeek(organizationId, targetWeekStart),
+      schedule: seriesId
+        ? await this.getScheduleForSeriesAndWeek(organizationId, seriesId, targetWeekStart)
+        : await this.getScheduleForWeek(organizationId, targetWeekStart),
       copiedCount,
     }
   }

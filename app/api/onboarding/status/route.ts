@@ -18,8 +18,17 @@ export async function GET() {
     const settings = (organization.settings as Record<string, unknown>) || {}
     const onboardingCompleted = Boolean(settings.onboardingCompleted)
     const rawStep = settings.onboardingStep
-    const onboardingStep =
+    let onboardingStep =
       typeof rawStep === 'number' && rawStep >= 1 && rawStep <= 5 ? rawStep : 1
+
+    if (!onboardingCompleted) {
+      const [employeeCount, scheduleCount] = await Promise.all([
+        prisma.employee.count({ where: { organizationId: user.organizationId } }),
+        prisma.schedule.count({ where: { organizationId: user.organizationId } }),
+      ])
+      if (employeeCount >= 1 && onboardingStep < 2) onboardingStep = 2
+      if (scheduleCount >= 1 && onboardingStep < 3) onboardingStep = 3
+    }
 
     return NextResponse.json({
       onboardingCompleted,

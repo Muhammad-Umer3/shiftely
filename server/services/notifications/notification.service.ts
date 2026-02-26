@@ -78,15 +78,15 @@ export class NotificationService {
 
     schedule.slots.forEach((slot) => {
       slot.assignments.forEach((a) => {
-        if (a.employee) {
+        if (a.employee && a.employee.userId && a.employee.user) {
           const emp = a.employee
-          if (!affectedEmployees.has(emp.userId)) {
-            affectedEmployees.set(emp.userId, {
+          if (!affectedEmployees.has(emp.userId!)) {
+            affectedEmployees.set(emp.userId!, {
               user: emp.user,
               shifts: [],
             })
           }
-          affectedEmployees.get(emp.userId).shifts.push({ ...slot, employee: emp })
+          affectedEmployees.get(emp.userId!)!.shifts.push({ ...slot, employee: emp })
         }
       })
     })
@@ -139,7 +139,7 @@ export class NotificationService {
 
     if (!schedule) return
 
-    const changedUserIds = new Set<string>()
+    const changedEmployeeIds = new Set<string>()
     const prev = previousSnapshot ?? {}
     const curr = currentSnapshot ?? {}
 
@@ -152,46 +152,56 @@ export class NotificationService {
       const allEmpIds = new Set([...prevEmployeeIds, ...currEmployeeIds])
       for (const empId of allEmpIds) {
         if (prevEmployeeIds.has(empId) !== currEmployeeIds.has(empId)) {
-          const emp = await prisma.employee.findUnique({ where: { id: empId }, select: { userId: true } })
-          if (emp) changedUserIds.add(emp.userId)
+          changedEmployeeIds.add(empId)
         }
       }
     }
 
-    const affectedEmployees = new Map<string, { user: any; shifts: any[] }>()
-    schedule.slots.forEach((slot) => {
-      slot.assignments.forEach((a) => {
-        if (a.employee && changedUserIds.has(a.employee.userId)) {
-          const emp = a.employee
-          if (!affectedEmployees.has(emp.userId)) {
-            affectedEmployees.set(emp.userId, { user: emp.user, shifts: [] })
-          }
-          affectedEmployees.get(emp.userId)!.shifts.push({ ...slot, employee: emp })
-        }
-      })
-    })
-    for (const userId of changedUserIds) {
-      if (affectedEmployees.has(userId)) continue
-      const user = await prisma.user.findUnique({ where: { id: userId } })
-      if (user) affectedEmployees.set(userId, { user, shifts: [] })
+    const affectedByUserId = new Map<string, { user: any; employee: any; shifts: any[] }>()
+    const affectedNoUser = new Map<string, { employee: any; shifts: any[] }>()
+
+    for (const empId of changedEmployeeIds) {
+      const emp = schedule.slots
+        .flatMap((s) => s.assignments.map((a) => a.employee).filter(Boolean))
+        .find((e) => e?.id === empId)
+      if (!emp) continue
+      const shifts = schedule.slots
+        .filter((s) => s.assignments.some((a) => a.employeeId === empId))
+        .map((s) => ({ ...s, employee: emp }))
+      if (emp.userId && emp.user) {
+        affectedByUserId.set(emp.userId, { user: emp.user, employee: emp, shifts })
+      } else {
+        affectedNoUser.set(empId, { employee: emp, shifts })
+      }
     }
 
-    for (const [userId, data] of affectedEmployees) {
+    for (const [, data] of affectedByUserId) {
       const message = data.shifts.length > 0
         ? this.getScheduleChangeMessage('published', data.shifts)
         : 'Your schedule has been published. Some of your shifts may have been changed or removed.'
-      await this.createNotification(userId, 'schedule_change', message, { scheduleId, changeType: 'published' })
+      await this.createNotification(data.user.id, 'schedule_change', message, { scheduleId, changeType: 'published' })
       if (data.user.email) {
         const emailHtml = data.shifts.length > 0
           ? this.buildScheduleChangeEmail('published', data.shifts)
           : `<html><body style="font-family: Arial, sans-serif; padding: 20px;"><h2>Schedule Published</h2><p>Your schedule has been published. Some of your shifts may have been changed or removed. Please check the app for details.</p></body></html>`
         await this.sendEmail(data.user.email, 'Schedule Published', emailHtml)
       }
-      if (data.user.phone) {
+      const phone = data.employee.phone ?? data.user.phone
+      if (phone) {
         const messageText = data.shifts.length > 0
           ? `Shiftely: Your schedule was published with ${data.shifts.length} shift(s). Check the app for details.`
           : 'Shiftely: Your schedule was published. Check the app for details.'
-        await WhatsAppService.sendWhatsApp(data.user.phone, messageText)
+        await WhatsAppService.sendWhatsApp(phone, messageText)
+      }
+    }
+
+    for (const [, data] of affectedNoUser) {
+      const phone = data.employee.phone
+      if (phone) {
+        const messageText = data.shifts.length > 0
+          ? `Shiftely: Your schedule was published with ${data.shifts.length} shift(s). Check the app for details.`
+          : 'Shiftely: Your schedule was published. Check the app for details.'
+        await WhatsAppService.sendWhatsApp(phone, messageText)
       }
     }
   }
@@ -225,15 +235,21 @@ export class NotificationService {
       },
     })
 
-    if (!employee || !employee.user.email) return
+    if (!employee) return
 
     const shifts = employee.slotAssignments.map((sa) => sa.slot)
-    const emailHtml = this.buildDailyScheduleEmail(shifts, date)
-    await this.sendEmail(
-      employee.user.email,
-      `Your Schedule for ${format(date, 'MMMM d, yyyy')}`,
-      emailHtml
-    )
+    if (employee.user?.email) {
+      const emailHtml = this.buildDailyScheduleEmail(shifts, date)
+      await this.sendEmail(
+        employee.user.email,
+        `Your Schedule for ${format(date, 'MMMM d, yyyy')}`,
+        emailHtml
+      )
+    }
+    if (!employee.user && employee.phone && shifts.length > 0) {
+      const messageText = `Shiftely: You have ${shifts.length} shift(s) on ${format(date, 'MMMM d, yyyy')}.`
+      await WhatsAppService.sendWhatsApp(employee.phone, messageText)
+    }
   }
 
   /**
@@ -570,5 +586,47 @@ export class NotificationService {
         </body>
       </html>
     `
+  }
+
+  /**
+   * Send "you've been added to the team" email when admin creates employee with login
+   */
+  static async sendAddedToTeamEmail(
+    email: string,
+    name: string | null,
+    organizationName: string,
+    loginUrl: string
+  ) {
+    const displayName = name || 'there'
+    const html = `
+      <html>
+        <body style="font-family: Arial, sans-serif; padding: 20px;">
+          <h2>You've been added to ${organizationName}</h2>
+          <p>Hi ${displayName},</p>
+          <p>You've been added to <strong>${organizationName}</strong> on Shiftely. You can log in to see your schedule and get shift updates.</p>
+          <p style="margin: 20px 0;">
+            <a href="${loginUrl}" style="background-color: #f59e0b; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block;">
+              Log in to Shiftely
+            </a>
+          </p>
+          <p>Your manager has set a temporary password for you — they'll share it with you. You can change it after logging in, or use "Forgot password" on the login page if needed.</p>
+          <p>If you didn't expect this, you can safely ignore this email.</p>
+        </body>
+      </html>
+    `
+    await this.sendEmail(email, `You've been added to ${organizationName} on Shiftely`, html)
+  }
+
+  /**
+   * Send WhatsApp when admin adds employee with login (optional)
+   */
+  static async sendAddedToTeamWhatsApp(
+    phone: string | null | undefined,
+    organizationName: string,
+    loginUrl: string
+  ) {
+    if (!phone) return
+    const messageText = `You've been added to ${organizationName} on Shiftely. Log in at ${loginUrl} to see your schedule.`
+    await WhatsAppService.sendWhatsApp(phone, messageText)
   }
 }

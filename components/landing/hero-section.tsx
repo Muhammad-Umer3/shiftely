@@ -55,6 +55,9 @@ export function HeroSection() {
           <p className="mt-3 text-base text-stone-500 max-w-xl mx-auto animate-fade-in-up delay-200">
             One-click payroll export. Overtime visible before you publish.
           </p>
+          <p className="mt-2 text-sm text-stone-500 max-w-xl mx-auto animate-fade-in-up delay-200">
+            7-day free trial on Growth—no credit card required.
+          </p>
 
           {/* Key Benefits */}
           <div className="mt-10 flex flex-wrap items-center justify-center gap-x-8 gap-y-4 text-sm text-stone-500 animate-fade-in-up delay-300">

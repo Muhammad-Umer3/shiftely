@@ -19,7 +19,8 @@ export function PublishScheduleButton({
       <Button
         onClick={() => setDialogOpen(true)}
         disabled={disabled}
-        className="bg-emerald-600 hover:bg-emerald-700 text-white"
+        size="lg"
+        className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold shadow-sm"
       >
         <Send className="mr-2 h-4 w-4" />
         Publish

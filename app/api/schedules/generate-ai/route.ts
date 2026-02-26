@@ -12,6 +12,15 @@ const DEFAULT_DISPLAY = { startHour: 6, endHour: 22, workingDays: [1, 2, 3, 4, 5
 export async function POST(req: NextRequest) {
   try {
     const user = await requireAuth()
+
+    const hasAI = await SubscriptionService.hasFeatureAccess(user.organizationId, 'ai_suggestions')
+    if (!hasAI) {
+      return NextResponse.json(
+        { message: 'Upgrade to Growth to use AI schedule generation.', upgradeRequired: true },
+        { status: 403 }
+      )
+    }
+
     const body = await req.json()
     const { weekStartDate, name } = body
 

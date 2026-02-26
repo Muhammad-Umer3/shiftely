@@ -7,7 +7,7 @@ import { format, addDays, startOfWeek, eachDayOfInterval } from 'date-fns'
 import { ScheduleDayColumn } from './schedule-day-column'
 import { ShiftCard } from './shift-card'
 import { DraggableGroup, isGroupDragId, getGroupIdFromDragId } from './draggable-group'
-import { isEmployeeDragId, getEmployeeIdFromDragId } from './draggable-employee'
+import { DraggableEmployee, isEmployeeDragId, getEmployeeIdFromDragId } from './draggable-employee'
 import Link from 'next/link'
 import { parseSlotDropId } from './droppable-slot'
 import { Button } from '@/components/ui/button'
@@ -15,6 +15,7 @@ import { ScheduleAIDialog } from './schedule-ai-dialog'
 import { Sparkles, Users, UsersRound } from 'lucide-react'
 import { toast } from 'sonner'
 import { getEmployeeColorClasses } from './employee-colors'
+import { getEmployeeDisplayName, getEmployeeDisplayContact } from '@/lib/employees'
 import { cn } from '@/lib/utils/cn'
 import { TooltipProvider } from '@/components/ui/tooltip'
 
@@ -22,11 +23,13 @@ const daysOfWeek = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 
 type Employee = {
   id: string
+  name?: string | null
+  phone?: string | null
   availabilityTemplate?: unknown
-  user: {
+  user?: {
     name: string | null
     email: string
-  }
+  } | null
 }
 
 const DAY_NAMES = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
@@ -57,10 +60,12 @@ type Shift = {
   position: string | null
   employee: {
     id: string
-    user: {
+    name?: string | null
+    phone?: string | null
+    user?: {
       name: string | null
       email: string
-    }
+    } | null
   } | null
 }
 
@@ -102,6 +107,7 @@ export function ScheduleCalendar({
   endHour = 22,
   workingDays = [1, 2, 3, 4, 5],
   canEdit = true,
+  canUseAI = true,
   timeOffByEmployee = {},
   employeeHoursAvailable = {},
   slotDurationHours = 1,
@@ -116,6 +122,7 @@ export function ScheduleCalendar({
   endHour?: number
   workingDays?: number[]
   canEdit?: boolean
+  canUseAI?: boolean
   timeOffByEmployee?: TimeOffByEmployee
   employeeHoursAvailable?: Record<string, number>
   slotDurationHours?: number
@@ -125,6 +132,7 @@ export function ScheduleCalendar({
   const [activeEmployee, setActiveEmployee] = useState<Employee | null>(null)
   const [aiOpen, setAiOpen] = useState(false)
   const [allGroups, setAllGroups] = useState<Group[]>([])
+  const [sidebarMode, setSidebarMode] = useState<'groups' | 'all'>('groups')
 
   useEffect(() => {
     fetch('/api/groups')
@@ -240,7 +248,7 @@ export function ScheduleCalendar({
           startTime: new Date(startTime),
           endTime: new Date(endTime),
           position: null,
-          employee: emp ? { id: emp.id, user: { name: emp.user.name, email: emp.user.email } } : null,
+          employee: emp ? { id: emp.id, name: emp.name, phone: emp.phone, user: { name: getEmployeeDisplayName(emp), email: getEmployeeDisplayContact(emp) } } : null,
         }
       })
       setOptimisticShifts((prev) => [...prev, ...optimisticShiftsToAdd])
@@ -300,7 +308,7 @@ export function ScheduleCalendar({
         startTime: new Date(startTime),
         endTime: new Date(endTime),
         position: null,
-        employee: { id: emp.id, user: { name: emp.user.name, email: emp.user.email } },
+        employee: { id: emp.id, name: emp.name, phone: emp.phone, user: { name: getEmployeeDisplayName(emp), email: getEmployeeDisplayContact(emp) } },
       }
       setOptimisticShifts((prev) => [...prev, optimisticShift])
 
@@ -326,7 +334,7 @@ export function ScheduleCalendar({
               startTime: new Date(s.startTime),
               endTime: new Date(s.endTime),
               position: s.position ?? null,
-              employee: s.employee ? { id: s.employee.id, user: { name: s.employee.user?.name ?? null, email: s.employee.user?.email ?? '' } } : null,
+              employee: s.employee ? { id: s.employee.id, name: s.employee.name, phone: s.employee.phone, user: s.employee.user ?? { name: getEmployeeDisplayName(s.employee), email: getEmployeeDisplayContact(s.employee) } } : null,
             }])
           )
           toast.success('Shift added')
@@ -462,56 +470,91 @@ export function ScheduleCalendar({
     <TooltipProvider delayDuration={400}>
     <DndContext collisionDetection={closestCenter} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
       <div className="flex gap-4">
-        {/* Groups & Employees sidebar - groups first, employees nested under each */}
-        <div className="w-48 shrink-0 flex flex-col gap-2">
-          <div className="flex items-center justify-between text-sm font-medium text-stone-600 mb-1">
-            <span className="flex items-center gap-1.5">
-              <UsersRound className="h-4 w-4" />
-              Groups
-            </span>
-            {canEdit && (
-              <Link
-                href="/employees"
-                className="text-xs text-amber-600 hover:text-amber-700 hover:underline"
-              >
-                Manage
-              </Link>
-            )}
-          </div>
-
-          {groupsList.length > 0 ? (
-            <div className="border border-stone-200 rounded-lg p-2 max-h-[320px] overflow-y-auto bg-stone-50/50">
-              {groupsList.map((group) => (
-                <DraggableGroup
-                  key={group.id}
-                  group={group}
-                  disabled={!canEdit}
-                  employeeAvailability={employeeAvailability}
-                />
-              ))}
-            </div>
-          ) : canEdit ? (
-            <Link href="/employees">
-              <Button
-                variant="outline"
-                size="sm"
-                className="w-full border-amber-200 text-amber-700 hover:bg-amber-50"
-              >
-                <UsersRound className="h-4 w-4 mr-1.5" />
-                Create group
-              </Button>
-            </Link>
-          ) : null}
-          {canEdit && scheduleId && (
+        {/* Groups & Employees sidebar */}
+        <div className="w-56 shrink-0 flex flex-col gap-2">
+          {canEdit && scheduleId && canUseAI && (
             <Button
               onClick={() => setAiOpen(true)}
-              variant="outline"
               size="sm"
-              className="mt-2 border-amber-300 text-amber-700 hover:bg-amber-50 hover:border-amber-400"
+              className="w-full bg-amber-500 hover:bg-amber-600 text-white font-medium shadow-sm"
             >
               <Sparkles className="h-4 w-4 mr-1.5" />
               AI Assistant
             </Button>
+          )}
+          <div className="flex rounded-lg border border-stone-200 p-0.5 bg-stone-100">
+            <button
+              type="button"
+              onClick={() => setSidebarMode('groups')}
+              className={cn(
+                'flex-1 py-1.5 text-xs font-medium rounded-md transition-colors',
+                sidebarMode === 'groups'
+                  ? 'bg-white text-stone-900 shadow-sm'
+                  : 'text-stone-600 hover:text-stone-900'
+              )}
+            >
+              Groups
+            </button>
+            <button
+              type="button"
+              onClick={() => setSidebarMode('all')}
+              className={cn(
+                'flex-1 py-1.5 text-xs font-medium rounded-md transition-colors',
+                sidebarMode === 'all'
+                  ? 'bg-white text-stone-900 shadow-sm'
+                  : 'text-stone-600 hover:text-stone-900'
+              )}
+            >
+              All
+            </button>
+          </div>
+          <div className="flex items-center justify-between text-sm font-medium text-stone-600 mb-1">
+            <span className="flex items-center gap-1.5">
+              {sidebarMode === 'groups' ? (
+                <UsersRound className="h-4 w-4" />
+              ) : (
+                <Users className="h-4 w-4" />
+              )}
+              {sidebarMode === 'groups' ? 'Groups' : 'Employees'}
+            </span>
+          </div>
+
+          {sidebarMode === 'groups' ? (
+            groupsList.length > 0 ? (
+              <div className="border border-stone-200 rounded-lg p-2 max-h-[320px] overflow-y-auto bg-stone-50/50">
+                {groupsList.map((group) => (
+                  <DraggableGroup
+                    key={group.id}
+                    group={group}
+                    disabled={!canEdit}
+                    employeeAvailability={employeeAvailability}
+                  />
+                ))}
+              </div>
+            ) : canEdit ? (
+              <Link href="/employees">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full border-amber-200 text-amber-700 hover:bg-amber-50"
+                >
+                  <UsersRound className="h-4 w-4 mr-1.5" />
+                  Create group
+                </Button>
+              </Link>
+            ) : null
+          ) : (
+            <div className="border border-stone-200 rounded-lg p-2 max-h-[320px] overflow-y-auto bg-stone-50/50 space-y-0.5">
+              {employees.map((emp) => (
+                <DraggableEmployee
+                  key={emp.id}
+                  employee={emp}
+                  disabled={!canEdit}
+                  hoursConsumed={employeeAvailability[emp.id]?.consumed}
+                  hoursAvailable={employeeAvailability[emp.id]?.available}
+                />
+              ))}
+            </div>
           )}
         </div>
 
@@ -540,7 +583,7 @@ export function ScheduleCalendar({
         </div>
       </div>
 
-      {scheduleId && (
+      {scheduleId && canUseAI && (
         <ScheduleAIDialog
           open={aiOpen}
           onOpenChange={setAiOpen}
@@ -560,7 +603,7 @@ export function ScheduleCalendar({
             const colorClasses = getEmployeeColorClasses(activeEmployee.id)
             return (
               <div className={cn('text-white p-2 rounded shadow-lg text-sm', colorClasses)}>
-                {activeEmployee.user.name || activeEmployee.user.email}
+                {getEmployeeDisplayName(activeEmployee)}
               </div>
             )
           })()

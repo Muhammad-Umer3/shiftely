@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAuth } from '@/lib/utils/auth'
 import { prisma } from '@/lib/db/prisma'
+import { SubscriptionService } from '@/server/services/subscription/subscription.service'
 
 export async function POST(req: NextRequest) {
   try {
@@ -21,6 +22,18 @@ export async function POST(req: NextRequest) {
     })
     if (!schedule) {
       return NextResponse.json({ message: 'Schedule not found' }, { status: 404 })
+    }
+    if (schedule.weekStartDate) {
+      const canEdit = await SubscriptionService.canEditScheduleForWeek(
+        user.organizationId,
+        new Date(schedule.weekStartDate)
+      )
+      if (!canEdit) {
+        return NextResponse.json(
+          { message: 'Free plan: you can only edit schedules for the current week.' },
+          { status: 403 }
+        )
+      }
     }
     const displaySettings = schedule.displaySettings as { shiftDefaults?: { minPeople?: number; maxPeople?: number } } | null
     const shiftDef = displaySettings?.shiftDefaults
@@ -136,11 +149,24 @@ export async function PUT(req: NextRequest) {
       },
       include: {
         assignments: true,
+        schedule: { select: { weekStartDate: true } },
       },
     })
 
     if (!existingSlot) {
       return NextResponse.json({ message: 'Slot not found' }, { status: 404 })
+    }
+    if (existingSlot.schedule?.weekStartDate) {
+      const canEdit = await SubscriptionService.canEditScheduleForWeek(
+        user.organizationId,
+        new Date(existingSlot.schedule.weekStartDate)
+      )
+      if (!canEdit) {
+        return NextResponse.json(
+          { message: 'Free plan: you can only edit schedules for the current week.' },
+          { status: 403 }
+        )
+      }
     }
 
     const newStart = startTime ? new Date(startTime) : existingSlot.startTime

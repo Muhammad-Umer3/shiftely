@@ -12,8 +12,10 @@ import { ScheduleChat } from '@/components/schedule/schedule-chat'
 import { format, addDays } from 'date-fns'
 import { PERMISSIONS } from '@/lib/permissions/permissions'
 import { checkPermission } from '@/lib/utils/auth'
+import { SubscriptionService } from '@/server/services/subscription/subscription.service'
 import Link from 'next/link'
 import { ChevronLeft } from 'lucide-react'
+import { ScheduleWeekNav } from '@/components/schedule/schedule-week-nav'
 
 type PageProps = {
   params: Promise<{ id: string }>
@@ -120,8 +122,17 @@ export default async function ScheduleDetailPage({ params, searchParams }: PageP
     defaultHoursPerWeek: e.defaultHoursPerWeek ?? undefined,
   }))
 
-  const canEdit = await checkPermission(PERMISSIONS.SCHEDULE_EDIT)
-  const canPublish = await checkPermission(PERMISSIONS.SCHEDULE_PUBLISH)
+  const canEditByPermission = await checkPermission(PERMISSIONS.SCHEDULE_EDIT)
+  const canPublishByPermission = await checkPermission(PERMISSIONS.SCHEDULE_PUBLISH)
+  const canEditScheduleForWeek = await SubscriptionService.canEditScheduleForWeek(
+    user.organizationId,
+    weekStart
+  )
+  const canEdit = canEditByPermission && canEditScheduleForWeek
+  const canPublish = canPublishByPermission && canEditScheduleForWeek
+
+  const subscriptionInfo = await SubscriptionService.getSubscriptionInfo(user.organizationId)
+  const canUseAI = subscriptionInfo.tier !== 'FREE'
 
   const org = await prisma.organization.findUnique({
     where: { id: user.organizationId },
@@ -217,7 +228,10 @@ export default async function ScheduleDetailPage({ params, searchParams }: PageP
             <ChevronLeft className="h-4 w-4" />
             Back to schedules
           </Link>
-          <h1 className="text-3xl font-bold text-stone-900">{displayName}</h1>
+          <div className="flex items-center gap-3 flex-wrap">
+            <h1 className="text-3xl font-bold text-stone-900">{displayName}</h1>
+            <ScheduleWeekNav weekStartDate={weekStartStr} scheduleSeriesId={schedule.scheduleSeriesId} />
+          </div>
           <p className="text-stone-600 mt-1">
             Week of {format(weekStart, 'MMMM d, yyyy')}
           </p>
@@ -244,11 +258,11 @@ export default async function ScheduleDetailPage({ params, searchParams }: PageP
       </div>
 
       <Card className="border-stone-200 bg-white">
-        <CardHeader>
-          <CardTitle className="text-stone-900">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-lg text-stone-900">
             {viewMode === 'roster' ? 'Roster View' : 'Weekly Schedule'}
           </CardTitle>
-          <CardDescription className="text-stone-600">
+          <CardDescription className="text-sm text-stone-500">
             {viewMode === 'roster'
               ? 'Employees as rows, days as columns'
               : 'Drag and drop to assign shifts'}
@@ -277,6 +291,7 @@ export default async function ScheduleDetailPage({ params, searchParams }: PageP
               endHour={displayEndHour}
               workingDays={workingDays}
               canEdit={canEdit}
+              canUseAI={canUseAI}
               timeOffByEmployee={timeOffByEmployeeSerialized}
               employeeHoursAvailable={employeeHoursAvailable}
               slotDurationHours={slotDurationHours}

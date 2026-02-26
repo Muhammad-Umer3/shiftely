@@ -43,7 +43,7 @@ export default async function InviteEmployeePage() {
           <InviteEmployeeForm redirectTo="/employees" />
           <p className="mt-4 text-sm text-stone-500">
             Prefer to add them directly?{' '}
-            <Link href="/employees/new" className="text-amber-600 hover:text-amber-700 font-medium">
+            <Link href="/employees?add=1" className="text-amber-600 hover:text-amber-700 font-medium">
               Add employee with name & phone
             </Link>
           </p>

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { requireAuth } from '@/lib/utils/auth'
 import { prisma } from '@/lib/db/prisma'
 import { AIService } from '@/server/services/ai/ai.service'
+import { SubscriptionService } from '@/server/services/subscription/subscription.service'
 import { startOfWeek } from 'date-fns'
 
 export async function POST(
@@ -10,6 +11,15 @@ export async function POST(
 ) {
   try {
     const user = await requireAuth()
+
+    const hasAI = await SubscriptionService.hasFeatureAccess(user.organizationId, 'ai_suggestions')
+    if (!hasAI) {
+      return NextResponse.json(
+        { message: 'Upgrade to Growth to use AI scheduling.', upgradeRequired: true },
+        { status: 403 }
+      )
+    }
+
     const { id: scheduleId } = await params
     const body = await req.json()
     const { prompt, constraints, strategy } = body

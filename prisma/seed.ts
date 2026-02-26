@@ -6,6 +6,7 @@ import {
   PERMISSION_DESCRIPTIONS,
   DEFAULT_ROLE_PERMISSIONS,
 } from '../lib/permissions/permissions'
+import { generateScheduleSlug } from '../lib/schedule-slug'
 
 const prisma = new PrismaClient()
 
@@ -123,18 +124,30 @@ async function main() {
     })
     console.log('  ✓ Created groups: Front of House, Back Office')
 
-    // One week schedule with slots and assignments
+    // One week schedule with slots and assignments (under a series)
     if (adminUser?.employee) {
       const weekStart = startOfWeek(new Date(), { weekStartsOn: 1 })
+      const demoSeries = await prisma.scheduleSeries.create({
+        data: {
+          organizationId: demoOrg.id,
+          name: 'Demo Week',
+        },
+      })
       const schedule = await prisma.schedule.create({
         data: {
           organizationId: demoOrg.id,
+          scheduleSeriesId: demoSeries.id,
           type: 'WEEK',
           weekStartDate: weekStart,
-          name: 'Demo Week',
+          name: demoSeries.name,
           status: 'DRAFT',
           createdById: adminUser.id,
         },
+      })
+      const slug = generateScheduleSlug(schedule.name, weekStart, schedule.id)
+      await prisma.schedule.update({
+        where: { id: schedule.id },
+        data: { slug },
       })
       const slotData = [
         { dayOffset: 0, startHour: 9, endHour: 17 },

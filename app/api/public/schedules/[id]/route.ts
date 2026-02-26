@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db/prisma'
+import { getEmployeeDisplayName, getEmployeeDisplayContact } from '@/lib/employees'
 
 export async function GET(
   req: NextRequest,
@@ -57,8 +58,8 @@ export async function GET(
         {
           id: employee.id,
           user: {
-            name: employee.user.name,
-            email: employee.user.email,
+            name: getEmployeeDisplayName(employee),
+            email: getEmployeeDisplayContact(employee),
           },
         },
       ]
@@ -69,7 +70,7 @@ export async function GET(
       })
       employees = allEmployees.map((e) => ({
         id: e.id,
-        user: { name: e.user.name, email: e.user.email },
+        user: { name: getEmployeeDisplayName(e), email: getEmployeeDisplayContact(e) },
       }))
     }
 
@@ -87,8 +88,8 @@ export async function GET(
             ? {
                 id: slot.assignments[0].employee.id,
                 user: {
-                  name: slot.assignments[0].employee.user.name,
-                  email: slot.assignments[0].employee.user.email,
+                  name: getEmployeeDisplayName(slot.assignments[0].employee),
+                  email: getEmployeeDisplayContact(slot.assignments[0].employee),
                 },
               }
             : null,

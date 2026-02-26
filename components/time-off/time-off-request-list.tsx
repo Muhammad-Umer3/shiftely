@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { format } from 'date-fns'
 import { cn } from '@/lib/utils/cn'
+import { getEmployeeDisplayName } from '@/lib/employees'
 
 type Request = {
   id: string
@@ -12,7 +13,7 @@ type Request = {
   type: string
   notes: string | null
   status: string
-  employee?: { user: { name: string | null; email: string } }
+  employee?: { id: string; name?: string | null; phone?: string | null; user?: { name: string | null; email: string } | null }
   approver?: { name: string | null; email: string } | null
 }
 
@@ -84,7 +85,7 @@ export function TimeOffRequestList({
             <div>
               {r.employee && (
                 <p className="font-medium text-stone-900">
-                  {r.employee.user.name || r.employee.user.email}
+                  {getEmployeeDisplayName(r.employee)}
                 </p>
               )}
               <p className="text-sm text-stone-600">

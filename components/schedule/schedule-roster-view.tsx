@@ -14,6 +14,7 @@ import {
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { EmployeeAvatar } from './employee-avatar'
+import { getEmployeeDisplayName, getEmployeeDisplayContact } from '@/lib/employees'
 import { toast } from 'sonner'
 import {
   Tooltip,
@@ -34,10 +35,12 @@ const TIME_SLOTS = [
 
 type Employee = {
   id: string
-  user: {
+  name?: string | null
+  phone?: string | null
+  user?: {
     name: string | null
     email: string
-  }
+  } | null
 }
 
 type Shift = {
@@ -47,10 +50,12 @@ type Shift = {
   position: string | null
   employee: {
     id: string
-    user: {
+    name?: string | null
+    phone?: string | null
+    user?: {
       name: string | null
       email: string
-    }
+    } | null
   } | null
 }
 
@@ -271,23 +276,30 @@ export function ScheduleRosterView({
                 className="border-b border-stone-100 hover:bg-stone-50/50"
               >
                 <td className="sticky left-0 z-10 bg-white border-r border-stone-200 px-4 py-2">
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <div className="flex items-center gap-2 cursor-help">
-                        <EmployeeAvatar name={emp.user.name} email={emp.user.email} size="md" />
+                  {(() => {
+                    const timeOff = timeOffByEmployee[emp.id] ?? { leaves: [], requests: [] }
+                    const hasTimeOff =
+                      (timeOff.leaves?.length ?? 0) > 0 || (timeOff.requests?.length ?? 0) > 0
+                    const cell = (
+                      <div className={`flex items-center gap-2 w-fit ${hasTimeOff ? 'cursor-help' : 'cursor-default'}`}>
+                        <EmployeeAvatar name={getEmployeeDisplayName(emp) !== 'Unnamed' ? getEmployeeDisplayName(emp) : null} email={getEmployeeDisplayContact(emp)} size="md" />
                         <div>
                           <p className="font-medium text-stone-900 text-sm truncate max-w-[140px]">
-                            {emp.user.name || emp.user.email}
+                            {getEmployeeDisplayName(emp)}
                           </p>
                         </div>
                       </div>
-                    </TooltipTrigger>
-                    <TooltipContent side="right" className="max-w-[240px]">
-                      <RosterTimeOffContent
-                        timeOff={timeOffByEmployee[emp.id] ?? { leaves: [], requests: [] }}
-                      />
-                    </TooltipContent>
-                  </Tooltip>
+                    )
+                    if (!hasTimeOff) return cell
+                    return (
+                      <Tooltip>
+                        <TooltipTrigger asChild>{cell}</TooltipTrigger>
+                        <TooltipContent side="right" className="max-w-[240px]">
+                          <RosterTimeOffContent timeOff={timeOff} />
+                        </TooltipContent>
+                      </Tooltip>
+                    )
+                  })()}
                 </td>
                 {weekDays.map((day) => {
                   const dayStr = format(day, 'yyyy-MM-dd')
@@ -321,7 +333,7 @@ export function ScheduleRosterView({
                               setAddModal({
                                 date: day,
                                 employeeId: emp.id,
-                                employeeName: emp.user.name || emp.user.email,
+                                employeeName: getEmployeeDisplayName(emp),
                               })
                             }
                             className="w-full flex items-center justify-center gap-1 text-xs text-stone-400 hover:text-amber-600 hover:bg-amber-50 rounded py-1 transition-colors"

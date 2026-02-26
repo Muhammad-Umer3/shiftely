@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAuth } from '@/lib/utils/auth'
 import { prisma } from '@/lib/db/prisma'
+import { SubscriptionService } from '@/server/services/subscription/subscription.service'
 
 export async function POST(req: NextRequest) {
   try {
@@ -22,6 +23,18 @@ export async function POST(req: NextRequest) {
     })
     if (!schedule) {
       return NextResponse.json({ message: 'Schedule not found' }, { status: 404 })
+    }
+    if (schedule.weekStartDate) {
+      const canEdit = await SubscriptionService.canEditScheduleForWeek(
+        user.organizationId,
+        new Date(schedule.weekStartDate)
+      )
+      if (!canEdit) {
+        return NextResponse.json(
+          { message: 'Free plan: you can only edit schedules for the current week.' },
+          { status: 403 }
+        )
+      }
     }
     const displaySettings = schedule.displaySettings as { shiftDefaults?: { minPeople?: number; maxPeople?: number } } | null
     const shiftDef = displaySettings?.shiftDefaults

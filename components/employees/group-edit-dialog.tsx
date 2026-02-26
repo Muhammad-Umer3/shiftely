@@ -12,10 +12,13 @@ import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils/cn'
+import { getEmployeeDisplayName } from '@/lib/employees'
 
 type Employee = {
   id: string
-  user: { name: string | null; email: string }
+  user?: { name: string | null; email: string } | null
+  name?: string | null
+  phone?: string | null
 }
 
 type Group = {
@@ -125,7 +128,7 @@ export function GroupEditDialog({
                     className="rounded border-stone-300"
                   />
                   <span className="text-sm truncate">
-                    {emp.user.name || emp.user.email}
+                    {getEmployeeDisplayName(emp)}
                   </span>
                 </label>
               ))}

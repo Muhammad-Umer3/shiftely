@@ -14,6 +14,12 @@ function buildTimeSlots(startHour: number, endHour: number, slotDurationHours: n
   return slots
 }
 
+function formatTime12h(timeSlot: string): string {
+  const [hours] = timeSlot.split(':').map(Number)
+  const d = new Date(2000, 0, 1, hours, 0)
+  return format(d, 'h:mm a')
+}
+
 type Shift = {
   id: string
   startTime: Date
@@ -21,10 +27,12 @@ type Shift = {
   position: string | null
   employee: {
     id: string
-    user: {
+    name?: string | null
+    phone?: string | null
+    user?: {
       name: string | null
       email: string
-    }
+    } | null
   } | null
 }
 
@@ -82,7 +90,7 @@ export function ScheduleDayColumn({
 
           return (
             <div key={timeSlot} className="space-y-1" style={{ minHeight: slotMinHeight }}>
-              <div className="text-xs text-stone-500 px-1">{timeSlot}</div>
+              <div className="text-xs text-stone-500 px-1">{formatTime12h(timeSlot)}</div>
               <DroppableSlot id={slotDropId(dayStr, timeSlot)}>
                 <SortableContext items={slotShifts.map((s) => s.id)} strategy={verticalListSortingStrategy}>
                   {slotShifts.map((shift) => (
@@ -98,7 +106,9 @@ export function ScheduleDayColumn({
                   ))}
                 </SortableContext>
                 {slotShifts.length === 0 && (
-                  <div className="min-h-[2rem] rounded border border-dashed border-stone-200 bg-stone-50/30" />
+                  <div className="min-h-[2.5rem] rounded border border-dashed border-stone-200 bg-stone-50/50 flex items-center justify-center">
+                    <span className="text-xs text-stone-400">Drop here</span>
+                  </div>
                 )}
               </DroppableSlot>
             </div>

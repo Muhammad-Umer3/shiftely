@@ -43,7 +43,7 @@ export function PricingSection() {
             <span className="block gradient-text">No surprises.</span>
           </h2>
           <p className="text-lg text-stone-400">
-            No credit card to start. Upgrade when you need more—paid plans include a 7-day free trial.
+            No credit card to start. Try Growth free for 7 days, then upgrade when you&apos;re ready.
           </p>
         </div>
 
@@ -80,7 +80,9 @@ export function PricingSection() {
                     <p className="text-stone-400 text-sm mb-6">
                       {isFree 
                         ? 'Try everything free—no card required' 
-                        : `Scale to ${tier.employeeLimit} employees`}
+                        : isPopular 
+                          ? '7-day free trial, no card · Scale to 15 employees'
+                          : `Scale to ${tier.employeeLimit} employees`}
                     </p>
                     
                     <div className="mb-8">
@@ -121,7 +123,11 @@ export function PricingSection() {
                     </Link>
                     
                     <p className="text-xs text-center text-stone-500 mt-4">
-                      {isFree ? 'No credit card · Free forever' : 'Billed monthly. Cancel anytime. 7-day free trial.'}
+                      {isFree 
+                        ? 'No credit card · Free forever' 
+                        : isPopular 
+                          ? '7-day free trial, then $29/mo. Cancel anytime.'
+                          : 'Billed monthly. Cancel anytime.'}
                     </p>
                   </div>
                 </div>

@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAuth } from '@/lib/utils/auth'
+import { prisma } from '@/lib/db/prisma'
 import { SchedulerService } from '@/server/services/scheduler/scheduler.service'
+import { SubscriptionService } from '@/server/services/subscription/subscription.service'
 
 export async function PATCH(
   req: NextRequest,
@@ -11,6 +13,24 @@ export async function PATCH(
     const { id } = await params
     const body = await req.json()
     const { name, displaySettings } = body
+
+    const existing = await prisma.schedule.findFirst({
+      where: { id, organizationId: user.organizationId },
+      select: { weekStartDate: true },
+    })
+    if (!existing?.weekStartDate) {
+      return NextResponse.json({ message: 'Schedule not found' }, { status: 404 })
+    }
+    const canEdit = await SubscriptionService.canEditScheduleForWeek(
+      user.organizationId,
+      new Date(existing.weekStartDate)
+    )
+    if (!canEdit) {
+      return NextResponse.json(
+        { message: 'Free plan: you can only edit schedules for the current week.' },
+        { status: 403 }
+      )
+    }
 
     const updateData: { name?: string; displaySettings?: { startHour: number; endHour: number; workingDays: number[]; displayGroupIds?: string[]; shiftDefaults?: { minPeople?: number; maxPeople?: number }; slotDurationHours?: number } | null } = {}
     if (typeof name === 'string') updateData.name = name

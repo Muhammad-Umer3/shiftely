@@ -15,6 +15,7 @@ import { Label } from '@/components/ui/label'
 import { ArrowLeftRight } from 'lucide-react'
 import { toast } from 'sonner'
 import { format } from 'date-fns'
+import { getEmployeeDisplayName } from '@/lib/employees'
 
 type Shift = {
   slotId: string
@@ -26,7 +27,9 @@ type Shift = {
 
 type Employee = {
   id: string
-  user: { id: string; name: string | null; email: string }
+  name?: string | null
+  phone?: string | null
+  user?: { id: string; name: string | null; email: string } | null
 }
 
 export function RequestSwapDialog({ currentUserId }: { currentUserId: string }) {
@@ -142,9 +145,9 @@ export function RequestSwapDialog({ currentUserId }: { currentUserId: string }) 
                   className="w-full rounded-md border border-stone-200 bg-white px-3 py-2 text-sm text-stone-900 focus:outline-none focus:ring-2 focus:ring-amber-500"
                 >
                   <option value="">Anyone available</option>
-                  {employees.map((emp) => (
-                    <option key={emp.id} value={emp.user.id}>
-                      {emp.user.name || emp.user.email}
+                  {employees.filter((emp) => emp.user).map((emp) => (
+                    <option key={emp.id} value={emp.user!.id}>
+                      {getEmployeeDisplayName(emp)}
                     </option>
                   ))}
                 </select>

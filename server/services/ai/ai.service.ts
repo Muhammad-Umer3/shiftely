@@ -1,5 +1,6 @@
 import { GoogleGenerativeAI } from '@google/generative-ai'
 import { prisma } from '@/lib/db/prisma'
+import { getEmployeeDisplayName } from '@/lib/employees'
 import { SchedulerService } from '../scheduler/scheduler.service'
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '')
@@ -228,7 +229,7 @@ Employees:
 ${employees
   .map(
     (emp) =>
-      `- ${emp.user.name || emp.user.email} (Role: ${emp.roleType || 'N/A'}, Recent shifts: ${emp.slotAssignments.length})`
+      `- ${emp.user?.name ?? emp.name ?? emp.user?.email ?? emp.phone ?? 'Unnamed'} (Role: ${emp.roleType || 'N/A'}, Recent shifts: ${emp.slotAssignments.length})`
   )
   .join('\n')}
 
@@ -313,7 +314,7 @@ ${employees
       emp.leaves?.length > 0
         ? ` UNAVAILABLE (on leave): ${emp.leaves.map((l: { startDate: Date; endDate: Date; type: string }) => `${l.startDate.toISOString().slice(0, 10)} to ${l.endDate.toISOString().slice(0, 10)} (${l.type})`).join('; ')}`
         : ''
-    return `- ${emp.user.name || emp.user.email} (ID: ${emp.id}, Role: ${emp.roleType || 'Any'}, Availability: ${JSON.stringify(emp.availabilityTemplate || {})}${leavesStr})`
+    return `- ${emp.user?.name ?? emp.name ?? emp.user?.email ?? emp.phone ?? 'Unnamed'} (ID: ${emp.id}, Role: ${emp.roleType || 'Any'}, Availability: ${JSON.stringify(emp.availabilityTemplate || {})}${leavesStr})`
   })
   .join('\n')}
 
@@ -351,7 +352,7 @@ Return JSON with suggested shifts:
         .filter((s: any) => employeeMap.has(s.employeeId))
         .map((s: any) => ({
           employeeId: s.employeeId,
-          employeeName: employeeMap.get(s.employeeId)?.user.name || employeeMap.get(s.employeeId)?.user.email,
+          employeeName: getEmployeeDisplayName(employeeMap.get(s.employeeId)),
           startTime: new Date(s.startTime),
           endTime: new Date(s.endTime),
           position: s.position || null,

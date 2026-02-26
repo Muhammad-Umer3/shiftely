@@ -42,7 +42,7 @@ export function Sidebar() {
                 className={cn(
                   'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
                   isActive
-                    ? 'bg-amber-500/15 text-amber-400 border border-amber-500/20'
+                    ? 'bg-amber-500/20 text-amber-300 border-l-2 border-l-amber-400 border-y border-r border-amber-500/30'
                     : 'text-stone-400 hover:bg-stone-800 hover:text-stone-200'
                 )}
               >
@@ -72,7 +72,7 @@ export function Sidebar() {
               href={item.href}
               className={cn(
                 'flex flex-col items-center justify-center gap-1 p-2 text-xs',
-                isActive ? 'text-amber-400' : 'text-stone-400'
+                isActive ? 'text-amber-300' : 'text-stone-400'
               )}
             >
               <item.icon className="h-5 w-5" />

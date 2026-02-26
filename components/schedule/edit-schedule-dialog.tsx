@@ -10,12 +10,10 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
-import { Label } from '@/components/ui/label'
 import { toast } from 'sonner'
-import { UsersRound, Search, Lock } from 'lucide-react'
+import { UsersRound, Search } from 'lucide-react'
 import { cn } from '@/lib/utils/cn'
 
-const DAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 const DEFAULT_DISPLAY = { startHour: 6, endHour: 22, workingDays: [1, 2, 3, 4, 5] }
 
 type DisplaySettings = {
@@ -51,17 +49,9 @@ export function EditScheduleDialog({
   onSaved?: () => void
 }) {
   const router = useRouter()
-  const defaults: DisplaySettings = initialDisplaySettings ?? DEFAULT_DISPLAY
   const [name, setName] = useState(initialName ?? '')
   const [includeSpecific, setIncludeSpecific] = useState(initialDisplayGroupIds.length > 0)
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set(initialDisplayGroupIds))
-  const [startHour, setStartHour] = useState(defaults.startHour)
-  const [endHour, setEndHour] = useState(defaults.endHour)
-  const [workingDays, setWorkingDays] = useState<number[]>(defaults.workingDays)
-  const [slotDurationHours, setSlotDurationHours] = useState<number>(defaults.slotDurationHours ?? 1)
-  const shiftDef = defaults.shiftDefaults
-  const [minPeople, setMinPeople] = useState<number | ''>(shiftDef?.minPeople ?? '')
-  const [maxPeople, setMaxPeople] = useState<number | ''>(shiftDef?.maxPeople ?? '')
   const [groups, setGroups] = useState<Group[]>([])
   const [groupSearch, setGroupSearch] = useState('')
   const [loading, setLoading] = useState(false)
@@ -77,13 +67,6 @@ export function EditScheduleDialog({
     setName(initialName ?? '')
     setIncludeSpecific(initialDisplayGroupIds.length > 0)
     setSelectedIds(new Set(initialDisplayGroupIds))
-    const d: DisplaySettings = initialDisplaySettings ?? DEFAULT_DISPLAY
-    setStartHour(d.startHour)
-    setEndHour(d.endHour)
-    setWorkingDays(Array.isArray(d.workingDays) ? d.workingDays : DEFAULT_DISPLAY.workingDays)
-    setSlotDurationHours([1, 2, 4].includes(Number(d.slotDurationHours)) ? Number(d.slotDurationHours) : 1)
-    setMinPeople(d.shiftDefaults?.minPeople ?? '')
-    setMaxPeople(d.shiftDefaults?.maxPeople ?? '')
   }, [initialName, initialDisplayGroupIds, initialDisplaySettings, open])
 
   useEffect(() => {
@@ -127,8 +110,7 @@ export function EditScheduleDialog({
   }
 
   const handleSave = async () => {
-    const min = minPeople === '' ? undefined : Number(minPeople)
-    const max = maxPeople === '' ? undefined : Number(maxPeople)
+    const d: DisplaySettings = initialDisplaySettings ?? DEFAULT_DISPLAY
     setSaving(true)
     try {
       const res = await fetch(`/api/schedules/${scheduleId}`, {
@@ -137,15 +119,12 @@ export function EditScheduleDialog({
         body: JSON.stringify({
           name: name.trim() || null,
           displaySettings: {
-            startHour,
-            endHour,
-            workingDays,
+            startHour: d.startHour,
+            endHour: d.endHour,
+            workingDays: Array.isArray(d.workingDays) ? d.workingDays : DEFAULT_DISPLAY.workingDays,
             displayGroupIds: includeSpecific ? Array.from(selectedIds) : [],
-            shiftDefaults:
-              min !== undefined || max !== undefined
-                ? { minPeople: min, maxPeople: max }
-                : undefined,
-            slotDurationHours,
+            shiftDefaults: d.shiftDefaults,
+            slotDurationHours: [1, 2, 4].includes(Number(d.slotDurationHours)) ? Number(d.slotDurationHours) : undefined,
           },
         }),
       })
@@ -169,17 +148,11 @@ export function EditScheduleDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md max-h-[90vh] flex flex-col">
         <DialogHeader>
           <DialogTitle>Edit schedule</DialogTitle>
         </DialogHeader>
-        <div className="space-y-4">
-          <div className="rounded-lg border border-amber-200 bg-amber-50/80 px-3 py-2.5 flex gap-2 text-sm text-amber-900">
-            <Lock className="h-4 w-4 shrink-0 mt-0.5 text-amber-600" />
-            <p>
-              Display hours and min/max people per shift cannot be changed after the schedule is created.
-            </p>
-          </div>
+        <div className="space-y-4 overflow-y-auto min-h-0 pr-1">
           <div>
             <label className="text-sm font-medium text-stone-700 block mb-1">Name</label>
             <input
@@ -189,20 +162,6 @@ export function EditScheduleDialog({
               onChange={(e) => setName(e.target.value)}
               className="w-full border border-stone-200 rounded-lg px-3 py-2 text-stone-900 bg-white focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
             />
-          </div>
-
-          <div>
-            <label className="text-sm font-medium text-stone-700 block mb-1">Slot duration</label>
-            <select
-              value={slotDurationHours}
-              onChange={(e) => setSlotDurationHours(Number(e.target.value))}
-              className="w-full border border-stone-200 rounded-lg px-3 py-2 text-stone-900 bg-white focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
-            >
-              <option value={1}>1 hour</option>
-              <option value={2}>2 hours</option>
-              <option value={4}>4 hours</option>
-            </select>
-            <p className="text-xs text-stone-500 mt-1">Length of each shift when dragging onto the calendar</p>
           </div>
 
           <div>
@@ -284,68 +243,8 @@ export function EditScheduleDialog({
               </div>
             )}
           </div>
-
-          <div className="rounded-lg border border-stone-200 bg-stone-50/50 p-3 space-y-2">
-            <Label className="text-sm font-medium text-stone-700 block">People per shift</Label>
-            <p className="text-xs text-stone-500">
-              Min/max people cannot be changed after creation.
-            </p>
-            <div className="flex items-center gap-3">
-              <div className="flex-1">
-                <Label className="text-xs text-stone-600">Min people</Label>
-                <div className="mt-1 border border-stone-200 rounded-lg px-3 py-2 text-stone-600 bg-stone-100/80">
-                  {minPeople === '' ? '—' : minPeople}
-                </div>
-              </div>
-              <div className="flex-1">
-                <Label className="text-xs text-stone-600">Max people</Label>
-                <div className="mt-1 border border-stone-200 rounded-lg px-3 py-2 text-stone-600 bg-stone-100/80">
-                  {maxPeople === '' ? '—' : maxPeople}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="rounded-lg border border-stone-200 bg-stone-50/50 p-3 space-y-2">
-            <Label className="text-sm font-medium text-stone-700 block">Display hours & days</Label>
-            <p className="text-xs text-stone-500">
-              Hours and working days cannot be changed after creation.
-            </p>
-            <div className="flex items-center gap-2 mb-2">
-              <div>
-                <Label className="text-xs text-stone-600">Start</Label>
-                <div className="mt-1 border border-stone-200 rounded-lg px-3 py-2 text-stone-600 bg-stone-100/80 w-24">
-                  {startHour === 0 ? '12 AM' : startHour < 12 ? `${startHour} AM` : startHour === 12 ? '12 PM' : `${startHour - 12} PM`}
-                </div>
-              </div>
-              <span className="pt-5 text-stone-500">to</span>
-              <div>
-                <Label className="text-xs text-stone-600">End</Label>
-                <div className="mt-1 border border-stone-200 rounded-lg px-3 py-2 text-stone-600 bg-stone-100/80 w-24">
-                  {endHour === 0 ? '12 AM' : endHour < 12 ? `${endHour} AM` : endHour === 12 ? '12 PM' : `${endHour - 12} PM`}
-                </div>
-              </div>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {DAY_LABELS.map((label, i) => {
-                const day = i
-                const isOn = workingDays.includes(day)
-                return (
-                  <span
-                    key={day}
-                    className={cn(
-                      'px-3 py-2 rounded-lg text-sm font-medium',
-                      isOn ? 'bg-amber-200/60 text-stone-800' : 'bg-stone-100 text-stone-400'
-                    )}
-                  >
-                    {label}
-                  </span>
-                )
-              })}
-            </div>
-          </div>
         </div>
-        <DialogFooter>
+        <DialogFooter className="shrink-0">
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
